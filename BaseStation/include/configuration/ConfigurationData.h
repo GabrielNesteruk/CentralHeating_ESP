@@ -23,6 +23,7 @@ namespace configuration
         uint8_t id;
         char name[ReportStationNameLength];
         uint8_t ip[16];
+        uint8_t report_peroid;
         uint16_t crc;
     };
 
