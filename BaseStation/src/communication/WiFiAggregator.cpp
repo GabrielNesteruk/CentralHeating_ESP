@@ -7,13 +7,15 @@ using namespace communication;
 using namespace configuration;
 
 WiFiAggregator::WiFiAggregator(ESP8266WiFiClass& _WiFi,
-							   configuration::ConfigurationManager& config_manager)
+							   configuration::ConfigurationManager& config_manager,
+							   mqtt_topic::ITopicData* topic_data)
 	: _WiFi(_WiFi)
 	, config_manager(config_manager)
 	, server{80}
 	, basic_ip_address{192, 168, 1, 1}
 	, basic_gateway_address{192, 168, 1, 1}
 	, basic_mask{255, 255, 255, 0}
+	, mqtt{WiFi.macAddress(), topic_data}
 {
 	WiFi.mode(WIFI_STA);
 	WiFi.disconnect();
@@ -55,6 +57,8 @@ void WiFiAggregator::Init()
 		}
 	}
 }
+
+void WiFiAggregator::Service() { }
 
 void WiFiAggregator::WaitForConfigData()
 {

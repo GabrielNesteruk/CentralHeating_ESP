@@ -1,0 +1,57 @@
+#include "communication/MQTT.h"
+#include "definitions.h"
+#include <assert.h>
+#include <string.h>
+
+using namespace communication;
+using namespace mqtt_topic;
+
+MQTT::MQTT(String mac_address, ITopicData* topic_data)
+	: client()
+	, mqtt_client{client}
+	, port{definitions::broker_port}
+	, topic_data{topic_data}
+{
+	assert(sizeof(broker) < sizeof(definitions::broker_address));
+	assert(sizeof(topic) < sizeof(definitions::topic_name));
+
+	strcpy(this->broker, definitions::broker_address);
+	strcpy(this->topic, definitions::topic_name);
+
+	mac_address.toCharArray(this->mac_address, sizeof(this->mac_address));
+}
+
+void MQTT::Init()
+{
+	mqtt_client.setServer(broker, port);
+	if(mqtt_client.connect(mac_address))
+	{
+		Serial.println("Connected to MQTT broker.");
+		mqtt_client.subscribe(topic);
+		mqtt_client.setCallback([this](char* topic, uint8_t* payload, unsigned int length) {
+			// check if topic is correct, only then do something with data
+			if(strcmp(this->topic, topic) == 0)
+			{
+				Serial.print("Message arrived [");
+				Serial.print(topic);
+				Serial.print("] ");
+
+				for(unsigned int i = 0; i < length; i++)
+				{
+					Serial.print((char)payload[i]);
+				}
+
+				this->topic_data->SetPayload(payload, length);
+			}
+		});
+	}
+	else
+	{
+		Serial.println("Could not connect to MQTT broker.");
+	}
+}
+
+void MQTT::Service()
+{
+	mqtt_client.loop();
+}
