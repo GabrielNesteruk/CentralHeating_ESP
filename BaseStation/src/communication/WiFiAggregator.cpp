@@ -8,14 +8,15 @@ using namespace configuration;
 
 WiFiAggregator::WiFiAggregator(ESP8266WiFiClass& _WiFi,
 							   configuration::ConfigurationManager& config_manager,
-							   mqtt_topic::ITopicData* topic_data)
+							   mqtt_topic::ITopicData<double>* topic_data,
+							   controller::WorkFlowController<double>* work_flow_controller)
 	: _WiFi(_WiFi)
 	, config_manager(config_manager)
 	, server{80}
 	, basic_ip_address{192, 168, 1, 1}
 	, basic_gateway_address{192, 168, 1, 1}
 	, basic_mask{255, 255, 255, 0}
-	, mqtt{WiFi.macAddress(), topic_data}
+	, mqtt{WiFi.macAddress(), topic_data, work_flow_controller}
 {
 	WiFi.mode(WIFI_STA);
 	WiFi.disconnect();
@@ -35,7 +36,7 @@ void WiFiAggregator::Init()
 	else
 	{
 		// we have config in the memory so were going to connect to the network and set up listening mode
-		const auto& config = config_manager.GetCurrentBaseStationConfig();
+		auto config = config_manager.Get();
 		if(static_cast<char>(config.ip[0]) != '\0')
 		{
 			_WiFi.config(IPAddress{config.ip}, IPAddress{config.gateway}, IPAddress{config.mask});
@@ -52,13 +53,15 @@ void WiFiAggregator::Init()
 		Serial.println(_WiFi.localIP());
 		if(_WiFi.localIP().toString() != String{reinterpret_cast<const char*>(config.ip)})
 		{
-			config_manager.SetBaseStationConfigIp(_WiFi.localIP());
-			config_manager.Save();
+			_WiFi.localIP().toString().toCharArray(reinterpret_cast<char*>(&config.ip),
+												   sizeof(config.ip));
+			config_manager.Update(config);
 		}
+
+		// start mqtt
+		mqtt.Init();
 	}
 }
-
-void WiFiAggregator::Service() { }
 
 void WiFiAggregator::WaitForConfigData()
 {
@@ -70,7 +73,7 @@ void WiFiAggregator::WaitForConfigData()
 		DeserializationError error = deserializeJson(doc, json);
 		if(!error)
 		{
-			BaseStationConfiguration read_config;
+			auto read_config = config_manager.Get();
 			memcpy(read_config.ssid, doc["ssid"] | "", 32);
 			memcpy(read_config.password, doc["password"] | "", 64);
 			memcpy(read_config.mask, doc["mask"] | "", 16);
@@ -87,8 +90,7 @@ void WiFiAggregator::WaitForConfigData()
 			else
 			{
 				this->server.send(200, "text/plain");
-				this->config_manager.SetBaseStationConfig(read_config);
-				this->config_manager.Save();
+				this->config_manager.Update(read_config);
 				get_out_from_config = true;
 			}
 		}
@@ -106,4 +108,10 @@ void WiFiAggregator::WaitForConfigData()
 	}
 
 	ESP.restart();
+}
+
+void WiFiAggregator::Service()
+{
+	server.handleClient();
+	mqtt.Service();
 }
