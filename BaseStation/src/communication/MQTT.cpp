@@ -6,11 +6,14 @@
 using namespace communication;
 using namespace mqtt_topic;
 
-MQTT::MQTT(String mac_address, ITopicData* topic_data)
+MQTT::MQTT(String mac_address,
+		   ITopicData<double>* topic_data,
+		   controller::WorkFlowController<double>* work_flow_controller)
 	: client()
 	, mqtt_client{client}
 	, port{definitions::broker_port}
 	, topic_data{topic_data}
+	, work_flow_controller{work_flow_controller}
 {
 	assert(sizeof(broker) < sizeof(definitions::broker_address));
 	assert(sizeof(topic) < sizeof(definitions::topic_name));
@@ -42,6 +45,7 @@ void MQTT::Init()
 				}
 
 				this->topic_data->SetPayload(payload, length);
+				this->work_flow_controller->UpdateReportStation(this->topic_data);
 			}
 		});
 	}
