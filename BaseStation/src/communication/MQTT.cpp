@@ -15,11 +15,12 @@ MQTT::MQTT(String mac_address,
 	, topic_data{topic_data}
 	, work_flow_controller{work_flow_controller}
 {
-	assert(sizeof(broker) < sizeof(definitions::broker_address));
-	assert(sizeof(topic) < sizeof(definitions::topic_name));
-
-	strcpy(this->broker, definitions::broker_address);
-	strcpy(this->topic, definitions::topic_name);
+	if((sizeof(definitions::broker_address) < sizeof(this->broker)) &&
+	   (sizeof(definitions::topic_name) < sizeof(this->topic)))
+	{
+		strcpy(this->broker, definitions::broker_address);
+		strcpy(this->topic, definitions::topic_name);
+	}
 
 	mac_address.toCharArray(this->mac_address, sizeof(this->mac_address));
 }
@@ -33,16 +34,20 @@ void MQTT::Init()
 		mqtt_client.subscribe(topic);
 		mqtt_client.setCallback([this](char* topic, uint8_t* payload, unsigned int length) {
 			// check if topic is correct, only then do something with data
+			Serial.print("Message arrived [");
+			Serial.print(topic);
+			Serial.print("] ");
 			if(strcmp(this->topic, topic) == 0)
 			{
-				Serial.print("Message arrived [");
-				Serial.print(topic);
-				Serial.print("] ");
+				Serial.println("Payload Added");
+				// Serial.print("Message arrived [");
+				// Serial.print(topic);
+				// Serial.print("] ");
 
-				for(unsigned int i = 0; i < length; i++)
-				{
-					Serial.print((char)payload[i]);
-				}
+				// for(unsigned int i = 0; i < length; i++)
+				// {
+				// 	Serial.print((char)payload[i]);
+				// }
 
 				this->topic_data->SetPayload(payload, length);
 				this->work_flow_controller->UpdateReportStation(this->topic_data);

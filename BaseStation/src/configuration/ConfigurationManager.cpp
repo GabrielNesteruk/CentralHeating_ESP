@@ -24,8 +24,8 @@ bool ConfigurationManager::Load()
 	EEPROM.end();
 
 	// check for base station data
-	uint16_t crc = crc16_CCITT(reinterpret_cast<uint8_t*>(&this->config_data.data),
-							   sizeof(this->config_data) - 2);
+	uint16_t crc =
+		crc16_CCITT(reinterpret_cast<uint8_t*>(&this->config_data), sizeof(this->config_data) - 2);
 
 	if(crc == this->config_data.crc)
 	{
@@ -51,6 +51,8 @@ void ConfigurationManager::Clear() const
 void ConfigurationManager::Update(const BaseStationConfigData& data)
 {
 	memcpy(&this->config_data.data, &data, sizeof(BaseStationConfigData));
+	this->config_data.crc =
+		crc16_CCITT(reinterpret_cast<uint8_t*>(&this->config_data), sizeof(this->config_data) - 2);
 	this->Save();
 }
 
