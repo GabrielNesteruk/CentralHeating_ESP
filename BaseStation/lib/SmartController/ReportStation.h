@@ -14,12 +14,13 @@ protected:
 	IPAddress ip;
 	String name;
 	uint8_t report_peroid;
+	T last_value;
 
 public:
 	ReportStation()
 	{
 		uid = UINT8_MAX;
-		ip = 0;
+		ip = static_cast<uint32_t>(0);
 		name = "";
 		report_peroid = 0;
 	}
@@ -51,7 +52,7 @@ public:
 	{
 		this->ip = ip;
 	}
-	const String& GetName() const
+	String& GetName()
 	{
 		return this->name;
 	}

@@ -4,32 +4,29 @@
 
 namespace device
 {
-template <typename T>
-class AHT20 : public ReportStation<T>
+class AHT20 : public ReportStation<double>
 {
-private:
-	T last_temperature;
 
 public:
 	AHT20()
-		: ReportStation()
 	{
-		last_temperature = 0.0;
+		this->last_value = 0.0;
 	}
 
 	AHT20(const uint8_t& uid, const IPAddress& ip, const String& name, const uint8_t& report_peroid)
 		: ReportStation(uid, ip, name, report_peroid)
-		, this()
-	{ }
-
-	virtual T GetLastReportedValue() const override
 	{
-		return last_temperature;
+		this->last_value = 0.0;
 	}
 
-	virtual void SetLastReportedValue(T value) override
+	virtual const double GetLastReportedValue() const override
 	{
-		this->last_temperature = value;
+		return this->last_value;
+	}
+
+	virtual void SetLastReportedValue(double value) override
+	{
+		this->last_value = value;
 	}
 };
 

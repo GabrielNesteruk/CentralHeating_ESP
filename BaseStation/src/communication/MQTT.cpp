@@ -37,20 +37,20 @@ void MQTT::Init()
 			Serial.print("Message arrived [");
 			Serial.print(topic);
 			Serial.print("] ");
+			Serial.println("");
+			for(unsigned int i = 0; i < length; i++)
+			{
+				char buff[2];
+				sprintf(buff, "%02X", payload[i]);
+				Serial.print(buff);
+			}
+			Serial.println("");
 			if(strcmp(this->topic, topic) == 0)
 			{
-				Serial.println("Payload Added");
-				// Serial.print("Message arrived [");
-				// Serial.print(topic);
-				// Serial.print("] ");
-
-				// for(unsigned int i = 0; i < length; i++)
-				// {
-				// 	Serial.print((char)payload[i]);
-				// }
-
-				this->topic_data->SetPayload(payload, length);
-				this->work_flow_controller->UpdateReportStation(this->topic_data);
+				if(this->topic_data->SetPayload(payload, length))
+				{
+					this->work_flow_controller->UpdateReportStation(this->topic_data);
+				}
 			}
 		});
 	}

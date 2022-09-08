@@ -27,6 +27,7 @@ void WiFiAggregator::Init()
 	bool is_config_in_memory = config_manager.Load();
 	if(!is_config_in_memory)
 	{
+		Serial.println("Config is no in memory");
 		// there is no config in memory so were setting wifi as an AP and waiting
 		// for a config data
 		_WiFi.softAPConfig(basic_ip_address, basic_gateway_address, basic_mask);
@@ -35,6 +36,7 @@ void WiFiAggregator::Init()
 	}
 	else
 	{
+		Serial.println("Trying to connect!");
 		// we have config in the memory so were going to connect to the network and set up listening mode
 		auto config = config_manager.Get();
 		if(static_cast<char>(config.ip[0]) != '\0')
@@ -45,6 +47,7 @@ void WiFiAggregator::Init()
 					reinterpret_cast<const char*>(config.password));
 		while(WiFi.status() != WL_CONNECTED)
 		{
+			Serial.println(".");
 			delay(500);
 		}
 

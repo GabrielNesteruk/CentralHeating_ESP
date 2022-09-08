@@ -11,7 +11,6 @@ struct BaseStationConfigData
 	uint8_t ip[16];
 	uint8_t gateway[16];
 	uint8_t mask[16];
-	uint16_t crc;
 };
 
 } // namespace configuration

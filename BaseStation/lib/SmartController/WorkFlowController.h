@@ -4,7 +4,6 @@
 #include "ITopicData.h"
 #include "ReportStation.h"
 
-
 namespace controller
 {
 template <typename T>
@@ -17,6 +16,13 @@ protected:
 	virtual void Service() = 0;
 
 public:
+	WorkFlowController()
+	{
+		for(size_t i{}; i < constants::max_report_stations; i++)
+		{
+			report_stations[i] = nullptr;
+		}
+	}
 	virtual void UpdateReportStation(mqtt_topic::ITopicData<T>* topic_data) = 0;
 };
 
