@@ -10,14 +10,15 @@ topic = 'centralHeating/roomTemperature'
 client_id = f'python-mqtt-{randrange(1000)}'
 roomName = [0x53, 0x61, 0x6C, 0x6F, 0x6E, 0x00]
 
-report_station_id = 0x03
+report_station_id = 0x00
 room_temp = 24.5
+humidity = 56.87
 
 name = bytearray(roomName)
 empty_bytes = bytearray(14)
 
-data_to_send = pack('<B6s14sBd', report_station_id,
-                    name, empty_bytes, 60, room_temp)
+data_to_send = pack('<B6s14sBdd', report_station_id,
+                    name, empty_bytes, 60, room_temp, humidity)
 
 width = 16
 poly = 0x1021
@@ -34,7 +35,7 @@ crc_calculator = CrcCalculator(configuration, use_table)
 
 checksum = crc_calculator.calculate_checksum(data_to_send)
 data_to_send_with_checksum = pack(
-    '<B6s14sBdH', report_station_id, name, empty_bytes, 60, room_temp, checksum)
+    '<B6s14sBddH', report_station_id, name, empty_bytes, 60, room_temp, humidity, checksum)
 
 
 def connect_mqtt():

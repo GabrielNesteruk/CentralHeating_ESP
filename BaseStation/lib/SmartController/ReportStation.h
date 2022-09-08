@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <Constants.h>
 #include <ESP8266WiFi.h>
 
 namespace device
@@ -14,7 +15,7 @@ protected:
 	IPAddress ip;
 	String name;
 	uint8_t report_peroid;
-	T last_value;
+	T last_value[constants::max_report_stations_values];
 
 public:
 	ReportStation()
@@ -69,8 +70,13 @@ public:
 		this->report_peroid = report_peroid;
 	}
 
-	const virtual T GetLastReportedValue() const = 0;
-	virtual void SetLastReportedValue(T value) = 0;
+	uint8_t GetMaxReportStationValues() const
+	{
+		return constants::max_report_stations_values;
+	}
+
+	const virtual T GetLastReportedValue(size_t index) const = 0;
+	virtual void SetLastReportedValue(T value, size_t index) = 0;
 };
 
 } // namespace device

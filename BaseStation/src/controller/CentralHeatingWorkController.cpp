@@ -1,5 +1,6 @@
 #include "controller/CentralHeatingWorkController.h"
 #include "Constants.h"
+#include "communication/DefaultTopicDataParser.h"
 
 using namespace controller;
 
@@ -33,7 +34,12 @@ void CentralHeatingWorkController::UpdateReportStation(mqtt_topic::ITopicData<do
 	{
 		topic_data->GetName(report_stations[active_report_stations]->GetName());
 		report_station->SetReportPeroid(topic_data->GetReportPeroid());
-		report_station->SetLastReportedValue(topic_data->GetValue());
+		report_station->SetLastReportedValue(
+			topic_data->GetValue(mqtt_topic::DefaultTopicValues::Temperature),
+			mqtt_topic::DefaultTopicValues::Temperature);
+		report_station->SetLastReportedValue(
+			topic_data->GetValue(mqtt_topic::DefaultTopicValues::Humidity),
+			mqtt_topic::DefaultTopicValues::Humidity);
 		this->Service();
 	}
 	else
@@ -45,7 +51,12 @@ void CentralHeatingWorkController::UpdateReportStation(mqtt_topic::ITopicData<do
 			report_stations[active_report_stations]->SetUID(topic_data->GetId());
 			topic_data->GetName(report_stations[active_report_stations]->GetName());
 			report_stations[active_report_stations]->SetReportPeroid(topic_data->GetReportPeroid());
-			report_stations[active_report_stations]->SetLastReportedValue(topic_data->GetValue());
+			report_stations[active_report_stations]->SetLastReportedValue(
+				topic_data->GetValue(mqtt_topic::DefaultTopicValues::Temperature),
+				mqtt_topic::DefaultTopicValues::Temperature);
+			report_stations[active_report_stations]->SetLastReportedValue(
+				topic_data->GetValue(mqtt_topic::DefaultTopicValues::Humidity),
+				mqtt_topic::DefaultTopicValues::Humidity);
 			this->active_report_stations++;
 			this->Service();
 		}
@@ -70,13 +81,20 @@ void CentralHeatingWorkController::Service()
 		Serial.print(" , peroid: ");
 		Serial.print(this->report_stations[last_id]->GetReportPeroid(), DEC);
 		Serial.print(" , temperature: ");
-		Serial.print(this->report_stations[last_id]->GetLastReportedValue(), 2);
+		Serial.print(this->report_stations[last_id]->GetLastReportedValue(
+						 mqtt_topic::DefaultTopicValues::Temperature),
+					 2);
+		Serial.print(" , humidity: ");
+		Serial.print(this->report_stations[last_id]->GetLastReportedValue(
+						 mqtt_topic::DefaultTopicValues::Humidity),
+					 2);
 		Serial.println("");
 
 		double temperatures[constants::max_report_stations];
 		for(size_t i{}; i < this->active_report_stations; i++)
 		{
-			temperatures[i] = this->report_stations[i]->GetLastReportedValue();
+			temperatures[i] = this->report_stations[i]->GetLastReportedValue(
+				mqtt_topic::DefaultTopicValues::Temperature);
 		}
 		this->temperature_algorithm->CompareSetpointWithValues(
 			this->setpoint, temperatures, this->active_report_stations);

@@ -23,10 +23,21 @@ bool DefaultTopicDataParser::SetPayload(uint8_t* payload, unsigned int length)
 	return false;
 }
 
-double DefaultTopicDataParser::GetValue()
+double DefaultTopicDataParser::GetValue(size_t index)
 {
-	double m_val;
-	memcpy(&m_val, this->payload + this->temperature_offset, sizeof(m_val));
+	double m_val{};
+	switch(index)
+	{
+	case DefaultTopicValues::Temperature: {
+		memcpy(&m_val, this->payload + this->temperature_offset, sizeof(m_val));
+		break;
+	}
+
+	case DefaultTopicValues::Humidity: {
+		memcpy(&m_val, this->payload + this->humidity_offset, sizeof(m_val));
+		break;
+	}
+	}
 	return m_val;
 }
 
