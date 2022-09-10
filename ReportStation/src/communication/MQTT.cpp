@@ -34,6 +34,11 @@ void MQTT::Init()
 	}
 }
 
+void MQTT::SendData(uint8_t* buffer, size_t length)
+{
+	mqtt_client->publish(this->topic, buffer, length);
+}
+
 void MQTT::Service()
 {
 	mqtt_client->loop();

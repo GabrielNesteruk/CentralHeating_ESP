@@ -3,7 +3,6 @@
 #include "definitions.h"
 #include <stdint.h>
 
-
 namespace configuration
 {
 struct ReportStationConfigData
@@ -13,6 +12,7 @@ struct ReportStationConfigData
 	uint8_t ip[16];
 	uint8_t gateway[16];
 	uint8_t mask[16];
+	uint8_t uid;
 	uint8_t name[definitions::max_report_station_name_length];
 	uint8_t report_peroid;
 };

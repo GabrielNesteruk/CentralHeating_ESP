@@ -31,6 +31,8 @@ public:
 	void Init();
 
 	void Service();
+
+	void SendData(uint8_t* buffer, size_t length);
 };
 
 } // namespace communication

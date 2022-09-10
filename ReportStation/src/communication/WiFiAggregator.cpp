@@ -80,6 +80,7 @@ void WiFiAggregator::WaitForConfigData()
 			memcpy(read_config.mask, doc["mask"] | "", 16);
 			memcpy(read_config.gateway, doc["gateway"] | "", 16);
 			memcpy(read_config.name, doc["name"] | "", definitions::max_report_station_name_length);
+			read_config.uid = doc["uid"] | 0xFF;
 			read_config.report_peroid = doc["peroid"] | 15;
 			read_config.ip[0] = '\0';
 
@@ -87,7 +88,7 @@ void WiFiAggregator::WaitForConfigData()
 			   static_cast<char>(read_config.password[0]) == '\0' ||
 			   static_cast<char>(read_config.mask[0]) == '\0' ||
 			   static_cast<char>(read_config.gateway[0]) == '\0' ||
-			   static_cast<char>(read_config.name[0]) == '\0')
+			   static_cast<char>(read_config.name[0]) == '\0' || read_config.uid == 0xFF)
 			{
 				this->server.send(404, "text/plain", "Data can not be empty!");
 			}
@@ -112,6 +113,11 @@ void WiFiAggregator::WaitForConfigData()
 	}
 
 	ESP.restart();
+}
+
+void WiFiAggregator::SendData(uint8_t* buffer, size_t length)
+{
+	mqtt.SendData(buffer, length);
 }
 
 void WiFiAggregator::Service()
