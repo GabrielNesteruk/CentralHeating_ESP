@@ -1,12 +1,15 @@
 from random import randrange
 from paho.mqtt import client as mqtt_client
+from paho import mqtt
 from struct import *
 from crc import Crc16, CrcCalculator, Configuration
 import time
 
-broker = 'broker.hivemq.com'
-port = 1883
+broker = 'db98cc4b26c04454ba817c7d45c767e1.s1.eu.hivemq.cloud'
+port = 8883
 topic = 'centralHeating/roomTemperature'
+username = 'centralheating'
+password = 'ineedwarmhouse'
 client_id = f'python-mqtt-{randrange(1000)}'
 roomName = [0x53, 0x61, 0x6C, 0x6F, 0x6E, 0x00]
 
@@ -46,6 +49,8 @@ def connect_mqtt():
             print('Failed to connect!')
 
     client = mqtt_client.Client(client_id)
+    client.tls_set(tls_version=mqtt.client.ssl.PROTOCOL_TLS)
+    client.username_pw_set(username, password)
     client.on_connect = on_connect_callback
     client.connect(broker, port)
     return client

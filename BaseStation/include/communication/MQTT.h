@@ -15,9 +15,9 @@ namespace communication
 class MQTT
 {
 private:
-	WiFiClient client;
-	PubSubClient mqtt_client;
-	char broker[40];
+	WiFiClientSecure client;
+	PubSubClient* mqtt_client;
+	char broker[100];
 	char topic[50];
 	char mac_address[18];
 	const int port;

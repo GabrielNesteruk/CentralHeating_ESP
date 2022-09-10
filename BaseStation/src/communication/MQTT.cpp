@@ -10,7 +10,6 @@ MQTT::MQTT(String mac_address,
 		   ITopicData<double>* topic_data,
 		   controller::WorkFlowController<double>* work_flow_controller)
 	: client()
-	, mqtt_client{client}
 	, port{definitions::broker_port}
 	, topic_data{topic_data}
 	, work_flow_controller{work_flow_controller}
@@ -27,12 +26,15 @@ MQTT::MQTT(String mac_address,
 
 void MQTT::Init()
 {
-	mqtt_client.setServer(broker, port);
-	if(mqtt_client.connect(mac_address))
+	client.setInsecure();
+	mqtt_client = new PubSubClient(client);
+	mqtt_client->setServer(broker, port);
+	if(mqtt_client->connect(
+		   mac_address, definitions::broker_username, definitions::broker_password))
 	{
 		Serial.println("Connected to MQTT broker.");
-		mqtt_client.subscribe(topic);
-		mqtt_client.setCallback([this](char* topic, uint8_t* payload, unsigned int length) {
+		mqtt_client->subscribe(topic);
+		mqtt_client->setCallback([this](char* topic, uint8_t* payload, unsigned int length) {
 			// check if topic is correct, only then do something with data
 			Serial.print("Message arrived [");
 			Serial.print(topic);
@@ -62,5 +64,5 @@ void MQTT::Init()
 
 void MQTT::Service()
 {
-	mqtt_client.loop();
+	mqtt_client->loop();
 }
