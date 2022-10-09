@@ -20,6 +20,7 @@ private:
 	char broker[100];
 	char topic[50];
 	char mac_address[18];
+	char raw_buffer[20];
 	const int port;
 	mqtt_topic::ITopicData<double>* topic_data;
 	controller::WorkFlowController<double>* work_flow_controller;
@@ -29,6 +30,7 @@ public:
 		 mqtt_topic::ITopicData<double>* topic_data,
 		 controller::WorkFlowController<double>* work_flow_controller);
 
+	bool PreInit(ESP8266WiFiClass& _WiFi);
 	void Init();
 	void Service();
 };

@@ -25,6 +25,7 @@ private:
 	MQTT mqtt;
 
 	void WaitForConfigData();
+	void SetServerEndpoints();
 
 public:
 	WiFiAggregator(ESP8266WiFiClass& _WiFi,

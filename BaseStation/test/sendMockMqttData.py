@@ -5,9 +5,9 @@ from struct import *
 from crc import Crc16, CrcCalculator, Configuration
 import time
 
-broker = 'db98cc4b26c04454ba817c7d45c767e1.s1.eu.hivemq.cloud'
+broker = 'f2c11b1d3819403e93d49f7036dddfdf.s1.eu.hivemq.cloud'
 port = 8883
-topic = 'centralHeating/roomTemperature'
+topic = 'centralHeating/baseStationIp'
 username = 'centralheating'
 password = 'ineedwarmhouse'
 client_id = f'python-mqtt-{randrange(1000)}'
@@ -64,7 +64,16 @@ def publish(client):
         time.sleep(10)
 
 
+def subscribe(client: mqtt_client):
+    def on_message(client, userdata, msg):
+        print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
+
+    client.subscribe(topic)
+    client.on_message = on_message
+
+
 if __name__ == '__main__':
     client = connect_mqtt()
-    client.loop_start()
-    publish(client)
+    subscribe(client)
+    client.loop_forever()
+    # publish(client)

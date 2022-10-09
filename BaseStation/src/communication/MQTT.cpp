@@ -24,42 +24,54 @@ MQTT::MQTT(String mac_address,
 	mac_address.toCharArray(this->mac_address, sizeof(this->mac_address));
 }
 
-void MQTT::Init()
+bool MQTT::PreInit(ESP8266WiFiClass& _WiFi)
 {
 	client.setInsecure();
 	mqtt_client = new PubSubClient(client);
 	mqtt_client->setServer(broker, port);
-	if(mqtt_client->connect(
-		   mac_address, definitions::broker_username, definitions::broker_password))
+	bool isConnected = (mqtt_client->connect(
+		mac_address, definitions::broker_username, definitions::broker_password));
+
+	if(isConnected)
 	{
-		Serial.println("Connected to MQTT broker.");
-		mqtt_client->subscribe(topic);
-		mqtt_client->setCallback([this](char* topic, uint8_t* payload, unsigned int length) {
-			// check if topic is correct, only then do something with data
-			Serial.print("Message arrived [");
-			Serial.print(topic);
-			Serial.print("] ");
-			Serial.println("");
-			for(unsigned int i = 0; i < length; i++)
-			{
-				char buff[2];
-				sprintf(buff, "%02X", payload[i]);
-				Serial.print(buff);
-			}
-			Serial.println("");
-			if(strcmp(this->topic, topic) == 0)
-			{
-				if(this->topic_data->SetPayload(payload, length))
-				{
-					this->work_flow_controller->UpdateReportStation(this->topic_data);
-				}
-			}
-		});
+		_WiFi.localIP().toString().toCharArray(this->raw_buffer, sizeof(this->raw_buffer));
+		Serial.println("Publishing: ");
+		Serial.print(this->raw_buffer);
+		Serial.println();
+		mqtt_client->publish(definitions::topic_ip_broadcast, this->raw_buffer),
+			strlen(this->raw_buffer);
+		return true;
 	}
 	else
 	{
-		Serial.println("Could not connect to MQTT broker.");
+		return false;
 	}
+}
+
+void MQTT::Init()
+{
+	mqtt_client->subscribe(topic);
+	mqtt_client->setCallback([this](char* topic, uint8_t* payload, unsigned int length) {
+		// check if topic is correct, only then do something with data
+		Serial.print("Message arrived [");
+		Serial.print(topic);
+		Serial.print("] ");
+		Serial.println("");
+		for(unsigned int i = 0; i < length; i++)
+		{
+			char buff[2];
+			sprintf(buff, "%02X", payload[i]);
+			Serial.print(buff);
+		}
+		Serial.println("");
+		if(strcmp(this->topic, topic) == 0)
+		{
+			if(this->topic_data->SetPayload(payload, length))
+			{
+				this->work_flow_controller->UpdateReportStation(this->topic_data);
+			}
+		}
+	});
 }
 
 void MQTT::Service()

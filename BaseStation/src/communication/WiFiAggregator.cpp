@@ -45,8 +45,16 @@ void WiFiAggregator::Init()
 		}
 		_WiFi.begin(reinterpret_cast<const char*>(config.ssid),
 					reinterpret_cast<const char*>(config.password));
+
+		auto capturedTime = millis();
 		while(WiFi.status() != WL_CONNECTED)
 		{
+			if(millis() - capturedTime >= static_cast<unsigned long>(1000 * 60 * 1))
+			{
+				// if there is no still connection after 1 minute then reset config and reinit device
+				config_manager.Clear();
+				ESP.restart();
+			}
 			Serial.println(".");
 			delay(500);
 		}
@@ -61,8 +69,20 @@ void WiFiAggregator::Init()
 			config_manager.Update(config);
 		}
 
+		delay(20 * 1000); // wait for 20 seconds before publishing your ip
+		if(mqtt.PreInit(_WiFi))
+		{
+			Serial.println("Connected to MQTT broker.");
+			mqtt.Init();
+			SetServerEndpoints();
+			server.begin();
+		}
+		else
+		{
+			// error !!!!
+			Serial.println("Could not connect to MQTT broker.");
+		}
 		// start mqtt
-		mqtt.Init();
 	}
 }
 
@@ -111,6 +131,24 @@ void WiFiAggregator::WaitForConfigData()
 	}
 
 	ESP.restart();
+}
+
+void WiFiAggregator::SetServerEndpoints()
+{
+	server.on("/clear", HTTP_POST, [this]() {
+		this->server.send(200, "text/plain");
+		this->config_manager.Clear();
+		ESP.restart();
+	});
+
+	server.on("/alive", HTTP_GET, [this]() {
+		DynamicJsonDocument doc(128);
+		String json;
+
+		doc["ip"] = _WiFi.localIP();
+		serializeJson(doc, json);
+		this->server.send(200, "application/json", json);
+	});
 }
 
 void WiFiAggregator::Service()
