@@ -24,6 +24,7 @@ public:
 		}
 	}
 	virtual void UpdateReportStation(mqtt_topic::ITopicData<T>* topic_data) = 0;
+	virtual void UpdateInternalValues() = 0;
 };
 
 } // namespace controller

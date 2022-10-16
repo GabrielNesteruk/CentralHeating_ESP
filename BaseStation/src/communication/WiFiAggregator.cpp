@@ -9,7 +9,8 @@ using namespace configuration;
 WiFiAggregator::WiFiAggregator(ESP8266WiFiClass& _WiFi,
 							   configuration::ConfigurationManager& config_manager,
 							   mqtt_topic::ITopicData<double>* topic_data,
-							   controller::WorkFlowController<double>* work_flow_controller)
+							   controller::WorkFlowController<double>* work_flow_controller,
+							   data::DataWrapper& data_storage)
 	: _WiFi(_WiFi)
 	, config_manager(config_manager)
 	, server{80}
@@ -17,6 +18,8 @@ WiFiAggregator::WiFiAggregator(ESP8266WiFiClass& _WiFi,
 	, basic_gateway_address{192, 168, 1, 1}
 	, basic_mask{255, 255, 255, 0}
 	, mqtt{WiFi.macAddress(), topic_data, work_flow_controller}
+	, data_storage{data_storage}
+	, work_flow_controller{work_flow_controller}
 {
 	WiFi.mode(WIFI_STA);
 	WiFi.disconnect();
@@ -145,9 +148,29 @@ void WiFiAggregator::SetServerEndpoints()
 		DynamicJsonDocument doc(128);
 		String json;
 
-		doc["ip"] = _WiFi.localIP();
+		doc["currentTemperature"] = serialized(String(this->data_storage.getAvgTemperature(), 1));
+		doc["setTemperature"] = serialized(String(this->data_storage.getSetTemperature(), 1));
 		serializeJson(doc, json);
 		this->server.send(200, "application/json", json);
+	});
+
+	server.on("/changeTemperature", HTTP_POST, [this]() {
+		String json = this->server.arg("plain");
+		DynamicJsonDocument doc(128);
+		DeserializationError error = deserializeJson(doc, json);
+		if(!error)
+		{
+			this->data_storage.getSetTemperature() = doc["temperature"];
+			this->work_flow_controller->UpdateInternalValues();
+			Serial.println("Set temperature request, value: ");
+			Serial.print(this->data_storage.getSetTemperature(), 2);
+			Serial.println();
+			this->server.send(200, "text/plain");
+		}
+		else
+		{
+			this->server.send(400, "text/plain");
+		}
 	});
 }
 
