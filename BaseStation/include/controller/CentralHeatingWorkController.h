@@ -15,6 +15,9 @@ private:
 	double setpoint;
 	algorithm::IAlgorithm<double>* temperature_algorithm;
 	data::DataWrapper& data_storage;
+	uint8_t last_saved_uid;
+
+	device::ReportStation<double>* getReportStationByUID(uint8_t uid);
 
 protected:
 	virtual void Service() override;

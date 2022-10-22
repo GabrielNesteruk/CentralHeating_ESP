@@ -4,6 +4,27 @@
 
 using namespace controller;
 
+static void printReportStationInfo(device::ReportStation<double>* report_station)
+{
+	if(report_station != nullptr)
+	{
+		Serial.println("");
+		Serial.print("Got data from report station: \"");
+		Serial.print(report_station->GetName());
+		Serial.print("\", uid: ");
+		Serial.print(report_station->GetUID(), DEC);
+		Serial.print(" , peroid: ");
+		Serial.print(report_station->GetReportPeroid(), DEC);
+		Serial.print(" , temperature: ");
+		Serial.print(
+			report_station->GetLastReportedValue(mqtt_topic::DefaultTopicValues::Temperature), 2);
+		Serial.print(" , humidity: ");
+		Serial.print(report_station->GetLastReportedValue(mqtt_topic::DefaultTopicValues::Humidity),
+					 2);
+		Serial.println("");
+	}
+}
+
 CentralHeatingWorkController::CentralHeatingWorkController(
 	device::ReportStation<double>* report_stations_array,
 	algorithm::IAlgorithm<double>* temperature_algorithm,
@@ -19,18 +40,24 @@ CentralHeatingWorkController::CentralHeatingWorkController(
 	}
 }
 
+device::ReportStation<double>* CentralHeatingWorkController::getReportStationByUID(uint8_t uid)
+{
+	for(size_t i{}; i < constants::max_report_stations; i++)
+	{
+		if(this->report_stations[i]->GetUID() == uid)
+		{
+			return this->report_stations[i];
+		}
+	}
+
+	return nullptr;
+}
+
 void CentralHeatingWorkController::UpdateReportStation(mqtt_topic::ITopicData<double>* topic_data)
 {
 
-	device::ReportStation<double>* report_station{nullptr};
-	for(size_t i{}; i < constants::max_report_stations; i++)
-	{
-		if(this->report_stations[i]->GetUID() == topic_data->GetId())
-		{
-			report_station = this->report_stations[i];
-			break;
-		}
-	}
+	device::ReportStation<double>* report_station = getReportStationByUID(topic_data->GetId());
+	this->last_saved_uid = topic_data->GetId();
 
 	if(report_station != nullptr)
 	{
@@ -71,26 +98,11 @@ void CentralHeatingWorkController::UpdateReportStation(mqtt_topic::ITopicData<do
 
 void CentralHeatingWorkController::Service()
 {
-	uint8_t last_id = 0;
-	if(this->active_report_stations > 0)
+	auto report_station = getReportStationByUID(this->last_saved_uid);
+
+	if(report_station != nullptr)
 	{
-		last_id = this->active_report_stations - 1;
-		Serial.println("");
-		Serial.print("Got data from report station: \"");
-		Serial.print(this->report_stations[last_id]->GetName());
-		Serial.print("\", uid: ");
-		Serial.print(this->report_stations[last_id]->GetUID(), DEC);
-		Serial.print(" , peroid: ");
-		Serial.print(this->report_stations[last_id]->GetReportPeroid(), DEC);
-		Serial.print(" , temperature: ");
-		Serial.print(this->report_stations[last_id]->GetLastReportedValue(
-						 mqtt_topic::DefaultTopicValues::Temperature),
-					 2);
-		Serial.print(" , humidity: ");
-		Serial.print(this->report_stations[last_id]->GetLastReportedValue(
-						 mqtt_topic::DefaultTopicValues::Humidity),
-					 2);
-		Serial.println("");
+		printReportStationInfo(report_station);
 
 		double temperatures[constants::max_report_stations];
 		double avg = 0.0;
