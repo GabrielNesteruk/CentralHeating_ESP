@@ -18,19 +18,27 @@ MQTT::MQTT(String mac_address)
 	mac_address.toCharArray(this->mac_address, sizeof(this->mac_address));
 }
 
-void MQTT::Init()
+bool MQTT::PreInit(ESP8266WiFiClass& _WiFi)
 {
 	client.setInsecure();
 	mqtt_client = new PubSubClient(client);
 	mqtt_client->setServer(broker, port);
-	if(mqtt_client->connect(
-		   mac_address, definitions::broker_username, definitions::broker_password))
+	bool isConnected = (mqtt_client->connect(
+		mac_address, definitions::broker_username, definitions::broker_password));
+
+	if(isConnected)
 	{
-		Serial.println("Connected to MQTT broker.");
+		_WiFi.localIP().toString().toCharArray(this->raw_buffer, sizeof(this->raw_buffer));
+		Serial.println("Publishing: ");
+		Serial.print(this->raw_buffer);
+		Serial.println();
+		mqtt_client->publish(definitions::topic_ip_broadcast, this->raw_buffer),
+			strlen(this->raw_buffer);
+		return true;
 	}
 	else
 	{
-		Serial.println("Could not connect to MQTT broker.");
+		return false;
 	}
 }
 

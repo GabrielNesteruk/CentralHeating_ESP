@@ -9,6 +9,7 @@
 #include <ESP8266WebServer.h>
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
+#include <misc/DataWrapper.h>
 
 namespace communication
 {
@@ -22,17 +23,22 @@ private:
 	const IPAddress basic_gateway_address; // basic gateway address assigned for AP
 	const IPAddress basic_mask; // basic mask assigned for AP
 	MQTT mqtt;
+	data::DataWrapper& data_storage;
 
 	void WaitForConfigData();
 
 public:
-	WiFiAggregator(ESP8266WiFiClass& _WiFi, configuration::ConfigurationManager& config_manager);
+	WiFiAggregator(ESP8266WiFiClass& _WiFi,
+				   configuration::ConfigurationManager& config_manager,
+				   data::DataWrapper& data_storage);
 
 	void Init();
 
 	void Service();
 
 	void SendData(uint8_t* buffer, size_t length);
+
+	void SetServerEndpoints();
 };
 
 } // namespace communication

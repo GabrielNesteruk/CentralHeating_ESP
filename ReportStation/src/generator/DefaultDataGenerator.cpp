@@ -4,9 +4,18 @@
 
 using namespace data_generator;
 
-DefaultDataGenerator::DefaultDataGenerator(configuration::ConfigurationManager& config_manager)
+DefaultDataGenerator::DefaultDataGenerator(configuration::ConfigurationManager& config_manager,
+										   data::DataWrapper& data_storage)
 	: config_manager(config_manager)
-{ }
+	, data_storage{data_storage}
+{
+	if(this->aht.begin())
+	{
+		aht.getEvent(&this->humidity, &this->temp);
+		this->data_storage.getCurrentTemperature() = this->temp.temperature;
+		this->data_storage.getHumidity() = this->humidity.relative_humidity;
+	}
+}
 
 uint16_t DefaultDataGenerator::GenerateData(uint8_t* buffer, size_t buffer_length)
 {
@@ -26,6 +35,9 @@ uint16_t DefaultDataGenerator::GenerateData(uint8_t* buffer, size_t buffer_lengt
 		aht.getEvent(&this->humidity, &this->temp);
 		temperature = this->temp.temperature;
 		humidity = this->humidity.relative_humidity;
+
+		this->data_storage.getCurrentTemperature() = temperature;
+		this->data_storage.getHumidity() = humidity;
 
 		memcpy(buffer + m_Length, &config.uid, sizeof(config.uid));
 		m_Length += sizeof(config.uid);

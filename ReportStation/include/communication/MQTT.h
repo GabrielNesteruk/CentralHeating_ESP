@@ -17,12 +17,13 @@ private:
 	char broker[100];
 	char topic[50];
 	char mac_address[18];
+	char raw_buffer[20];
 	const int port;
 
 public:
 	MQTT(String mac_address);
 
-	void Init();
+	bool PreInit(ESP8266WiFiClass& _WiFi);
 	void Service();
 	void SendData(uint8_t* buffer, size_t length);
 };

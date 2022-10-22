@@ -2,6 +2,7 @@
 #include "configuration/ConfigurationManager.h"
 #include "controller/WorkFlowController.h"
 #include "generator/DefaultDataGenerator.h"
+#include "misc/DataWrapper.h"
 #include <Arduino.h>
 
 void setup()
@@ -12,9 +13,10 @@ void setup()
 
 void loop()
 {
+	data::DataWrapper data_storage;
 	configuration::ConfigurationManager config_manager;
-	communication::WiFiAggregator wifi_aggregator(WiFi, config_manager);
-	data_generator::DefaultDataGenerator default_data_generator{config_manager};
+	data_generator::DefaultDataGenerator default_data_generator{config_manager, data_storage};
+	communication::WiFiAggregator wifi_aggregator(WiFi, config_manager, data_storage);
 	controller::WorkFlowController controller{
 		config_manager, wifi_aggregator, &default_data_generator};
 

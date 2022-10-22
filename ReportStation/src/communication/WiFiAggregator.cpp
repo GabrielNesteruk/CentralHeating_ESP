@@ -7,7 +7,8 @@ using namespace communication;
 using namespace configuration;
 
 WiFiAggregator::WiFiAggregator(ESP8266WiFiClass& _WiFi,
-							   configuration::ConfigurationManager& config_manager)
+							   configuration::ConfigurationManager& config_manager,
+							   data::DataWrapper& data_storage)
 	: _WiFi(_WiFi)
 	, config_manager(config_manager)
 	, server{80}
@@ -15,6 +16,7 @@ WiFiAggregator::WiFiAggregator(ESP8266WiFiClass& _WiFi,
 	, basic_gateway_address{192, 168, 1, 1}
 	, basic_mask{255, 255, 255, 0}
 	, mqtt{WiFi.macAddress()}
+	, data_storage{data_storage}
 {
 	WiFi.mode(WIFI_STA);
 	WiFi.disconnect();
@@ -29,7 +31,9 @@ void WiFiAggregator::Init()
 		// there is no config in memory so were setting wifi as an AP and waiting
 		// for a config data
 		_WiFi.softAPConfig(basic_ip_address, basic_gateway_address, basic_mask);
-		_WiFi.softAP(definitions::default_report_station_name);
+		char tmpSSID[100];
+		sprintf(tmpSSID, "%s %d", definitions::default_report_station_name, ESP.getChipId());
+		_WiFi.softAP(tmpSSID);
 		WaitForConfigData();
 	}
 	else
@@ -59,8 +63,18 @@ void WiFiAggregator::Init()
 			config_manager.Update(config);
 		}
 
-		// start mqtt
-		mqtt.Init();
+		delay(20 * 1000); // wait for 20 seconds before publishing your ip
+		if(mqtt.PreInit(_WiFi))
+		{
+			Serial.println("Connected to MQTT broker.");
+			SetServerEndpoints();
+			server.begin();
+		}
+		else
+		{
+			// error !!!!
+			Serial.println("Could not connect to MQTT broker.");
+		}
 	}
 }
 
@@ -118,6 +132,48 @@ void WiFiAggregator::WaitForConfigData()
 void WiFiAggregator::SendData(uint8_t* buffer, size_t length)
 {
 	mqtt.SendData(buffer, length);
+}
+
+void WiFiAggregator::SetServerEndpoints()
+{
+	server.on("/clear", HTTP_POST, [this]() {
+		this->server.send(200, "text/plain");
+		this->config_manager.Clear();
+		ESP.restart();
+	});
+
+	server.on("/alive", HTTP_GET, [this]() {
+		DynamicJsonDocument doc(256);
+		String json;
+		auto read_config = config_manager.Get();
+
+		doc["uid"] = read_config.uid;
+		doc["name"] = read_config.name;
+		doc["currentTemperature"] =
+			serialized(String(this->data_storage.getCurrentTemperature(), 1));
+		doc["humidity"] = serialized(String(this->data_storage.getHumidity(), 1));
+		doc["peroid"] = read_config.report_peroid;
+		serializeJson(doc, json);
+		this->server.send(200, "application/json", json);
+	});
+
+	server.on("/settings", HTTP_POST, [this]() {
+		String json = this->server.arg("plain");
+		DynamicJsonDocument doc(256);
+		DeserializationError error = deserializeJson(doc, json);
+		if(!error)
+		{
+			auto read_config = config_manager.Get();
+			memcpy(read_config.name, doc["name"] | "", definitions::max_report_station_name_length);
+			read_config.report_peroid = doc["peroid"] | read_config.report_peroid;
+			this->config_manager.Update(read_config);
+			this->server.send(200, "text/plain");
+		}
+		else
+		{
+			this->server.send(400, "text/plain");
+		}
+	});
 }
 
 void WiFiAggregator::Service()
