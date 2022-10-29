@@ -6,6 +6,7 @@
 #include "controller/CentralHeatingWorkController.h"
 #include "device/AHT20.h"
 #include "device/Lcd.h"
+#include "device/Relay.h"
 #include "misc/DataWrapper.h"
 #include <Arduino.h>
 
@@ -18,6 +19,7 @@ void setup()
 void loop()
 {
 	lcd::Lcd lcd;
+	device::Relay relay;
 	data::DataWrapper data_storage;
 	device::AHT20 temperature_sensors[constants::max_report_stations];
 	algorithm::DefaultTemperatureAlgo default_temp_measure_algorithm(
@@ -29,7 +31,8 @@ void loop()
 		&default_temp_measure_algorithm,
 		definitions::default_setpoint,
 		data_storage,
-		lcd};
+		lcd,
+		relay};
 	mqtt_topic::DefaultTopicDataParser default_topic_data_parser;
 	communication::WiFiAggregator wifi_aggregator(WiFi,
 												  config_manager,

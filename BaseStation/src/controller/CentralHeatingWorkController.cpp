@@ -30,11 +30,13 @@ CentralHeatingWorkController::CentralHeatingWorkController(
 	algorithm::IAlgorithm<double>* temperature_algorithm,
 	double default_setpoint,
 	data::DataWrapper& data_storage,
-	lcd::Lcd& lcd)
+	lcd::Lcd& lcd,
+	device::Relay& relay)
 	: setpoint{default_setpoint}
 	, temperature_algorithm{temperature_algorithm}
 	, data_storage{data_storage}
 	, lcd{lcd}
+	, relay{relay}
 {
 	for(size_t i{}; i < constants::max_report_stations; i++)
 	{
@@ -133,11 +135,20 @@ void CentralHeatingWorkController::Service()
 
 			avg += temperatures[i];
 		}
-		this->temperature_algorithm->CompareSetpointWithValues(
+		bool algorithm_result = this->temperature_algorithm->CompareSetpointWithValues(
 			this->setpoint, temperatures, this->active_report_stations);
 
 		this->data_storage.getAvgTemperature() =
 			avg / static_cast<double>(this->active_report_stations);
+
+		if(algorithm_result)
+		{
+			relay.On();
+		}
+		else
+		{
+			relay.Off();
+		}
 	}
 }
 

@@ -4,6 +4,7 @@
 #include "WorkFlowController.h"
 #include "device/AHT20.h"
 #include "device/Lcd.h"
+#include "device/Relay.h"
 #include "misc/DataWrapper.h"
 #include <IAlgorithm.h>
 
@@ -18,6 +19,7 @@ private:
 	data::DataWrapper& data_storage;
 	uint8_t last_saved_uid;
 	lcd::Lcd& lcd;
+	device::Relay& relay;
 
 	device::ReportStation<double>* getReportStationByUID(uint8_t uid);
 
@@ -29,7 +31,8 @@ public:
 								 algorithm::IAlgorithm<double>* temperature_algorithm,
 								 double default_setpoint,
 								 data::DataWrapper& data_storage,
-								 lcd::Lcd& lcd);
+								 lcd::Lcd& lcd,
+								 device::Relay& relay);
 	virtual void UpdateReportStation(mqtt_topic::ITopicData<double>* topic_data) override;
 	virtual void UpdateInternalValues() override;
 };
