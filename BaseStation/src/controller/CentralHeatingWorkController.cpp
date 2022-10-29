@@ -29,10 +29,12 @@ CentralHeatingWorkController::CentralHeatingWorkController(
 	device::ReportStation<double>* report_stations_array,
 	algorithm::IAlgorithm<double>* temperature_algorithm,
 	double default_setpoint,
-	data::DataWrapper& data_storage)
+	data::DataWrapper& data_storage,
+	lcd::Lcd& lcd)
 	: setpoint{default_setpoint}
 	, temperature_algorithm{temperature_algorithm}
 	, data_storage{data_storage}
+	, lcd{lcd}
 {
 	for(size_t i{}; i < constants::max_report_stations; i++)
 	{
@@ -61,6 +63,14 @@ void CentralHeatingWorkController::UpdateReportStation(mqtt_topic::ITopicData<do
 
 	if(report_station != nullptr)
 	{
+		String tmpName;
+		topic_data->GetName(tmpName);
+		lcd.UpdatePrintableElement(
+			topic_data->GetId(),
+			tmpName,
+			topic_data->GetValue(mqtt_topic::DefaultTopicValues::Temperature),
+			topic_data->GetValue(mqtt_topic::DefaultTopicValues::Humidity));
+
 		topic_data->GetName(report_stations[active_report_stations]->GetName());
 		report_station->SetReportPeroid(topic_data->GetReportPeroid());
 		report_station->SetLastReportedValue(
@@ -77,6 +87,15 @@ void CentralHeatingWorkController::UpdateReportStation(mqtt_topic::ITopicData<do
 		if(this->active_report_stations < constants::max_report_stations &&
 		   this->report_stations[active_report_stations] != nullptr)
 		{
+			String tmpString;
+			topic_data->GetName(tmpString);
+
+			lcd.AddPrintableElement(lcd::Lcd::PrintableElement(
+				topic_data->GetId(),
+				tmpString,
+				topic_data->GetValue(mqtt_topic::DefaultTopicValues::Temperature),
+				topic_data->GetValue(mqtt_topic::DefaultTopicValues::Humidity)));
+
 			report_stations[active_report_stations]->SetUID(topic_data->GetId());
 			topic_data->GetName(report_stations[active_report_stations]->GetName());
 			report_stations[active_report_stations]->SetReportPeroid(topic_data->GetReportPeroid());
@@ -92,6 +111,7 @@ void CentralHeatingWorkController::UpdateReportStation(mqtt_topic::ITopicData<do
 		else
 		{
 			Serial.println("Report station list is full !!!");
+			lcd.PrintError(definitions::ERROR_TYPE::REPORT_STATION_FULL_LIST_ERROR);
 		}
 	}
 }

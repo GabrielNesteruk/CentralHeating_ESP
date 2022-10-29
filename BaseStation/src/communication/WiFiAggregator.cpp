@@ -10,7 +10,8 @@ WiFiAggregator::WiFiAggregator(ESP8266WiFiClass& _WiFi,
 							   configuration::ConfigurationManager& config_manager,
 							   mqtt_topic::ITopicData<double>* topic_data,
 							   controller::WorkFlowController<double>* work_flow_controller,
-							   data::DataWrapper& data_storage)
+							   data::DataWrapper& data_storage,
+							   lcd::Lcd& lcd)
 	: _WiFi(_WiFi)
 	, config_manager(config_manager)
 	, server{80}
@@ -20,6 +21,7 @@ WiFiAggregator::WiFiAggregator(ESP8266WiFiClass& _WiFi,
 	, mqtt{WiFi.macAddress(), topic_data, work_flow_controller}
 	, data_storage{data_storage}
 	, work_flow_controller{work_flow_controller}
+	, lcd{lcd}
 {
 	WiFi.mode(WIFI_STA);
 	WiFi.disconnect();
@@ -30,6 +32,7 @@ void WiFiAggregator::Init()
 	bool is_config_in_memory = config_manager.Load();
 	if(!is_config_in_memory)
 	{
+		lcd.Println(3, "Oczekiwanie", "na", "konfiguracje.");
 		Serial.println("Config is no in memory");
 		// there is no config in memory so were setting wifi as an AP and waiting
 		// for a config data
@@ -50,13 +53,14 @@ void WiFiAggregator::Init()
 					reinterpret_cast<const char*>(config.password));
 
 		auto capturedTime = millis();
+		lcd.Print("WiFi Init...");
 		while(WiFi.status() != WL_CONNECTED)
 		{
 			if(millis() - capturedTime >= static_cast<unsigned long>(1000 * 60 * 1))
 			{
-				// if there is no still connection after 1 minute then reset config and reinit device
-				config_manager.Clear();
-				ESP.restart();
+				lcd.PrintError(definitions::ERROR_TYPE::WIFI_CONNECTION_ERROR);
+				while(true)
+					;
 			}
 			Serial.println(".");
 			delay(500);
@@ -73,6 +77,7 @@ void WiFiAggregator::Init()
 		}
 
 		delay(20 * 1000); // wait for 20 seconds before publishing your ip
+		lcd.Print("MQTT Init...");
 		if(mqtt.PreInit(_WiFi))
 		{
 			Serial.println("Connected to MQTT broker.");
@@ -84,8 +89,8 @@ void WiFiAggregator::Init()
 		{
 			// error !!!!
 			Serial.println("Could not connect to MQTT broker.");
+			lcd.PrintError(definitions::ERROR_TYPE::MQTT_CONNECTION_ERROR);
 		}
-		// start mqtt
 	}
 }
 

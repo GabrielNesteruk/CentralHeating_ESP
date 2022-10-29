@@ -18,4 +18,12 @@ constexpr const char* broker_address{"f2c11b1d3819403e93d49f7036dddfdf.s1.eu.hiv
 constexpr const int broker_port{8883};
 constexpr const char* topic_name{"centralHeating/roomTemperature"};
 constexpr const char* topic_ip_broadcast{"centralHeating/baseStationIp"};
+
+enum ERROR_TYPE
+{
+	WIFI_CONNECTION_ERROR = 0x00,
+	MQTT_CONNECTION_ERROR = 0x01,
+	REPORT_STATION_FULL_LIST_ERROR = 0x03
+};
+
 } // namespace definitions
