@@ -63,7 +63,8 @@ void WiFiAggregator::Init()
 				lcd.PrintError(definitions::ERROR_TYPE::WIFI_CONNECTION_ERROR);
 				while(true)
 				{
-					wdt_reset();
+					ESP.wdtFeed();
+					pushButton.Service();
 				}
 			}
 			Serial.println(".");
@@ -143,7 +144,6 @@ void WiFiAggregator::WaitForConfigData()
 
 	while(!get_out_from_config)
 	{
-		pushButton.Service();
 		server.handleClient();
 	}
 
