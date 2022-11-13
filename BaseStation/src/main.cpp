@@ -6,6 +6,7 @@
 #include "controller/CentralHeatingWorkController.h"
 #include "device/AHT20.h"
 #include "device/Lcd.h"
+#include "device/PushButton.h"
 #include "device/Relay.h"
 #include "misc/DataWrapper.h"
 #include <Arduino.h>
@@ -26,6 +27,8 @@ void loop()
 		definitions::default_hysteresis);
 
 	configuration::ConfigurationManager config_manager;
+
+	device::PushButton pushButton{config_manager};
 	controller::CentralHeatingWorkController central_heating_controller{
 		temperature_sensors,
 		&default_temp_measure_algorithm,
@@ -39,7 +42,8 @@ void loop()
 												  &default_topic_data_parser,
 												  &central_heating_controller,
 												  data_storage,
-												  lcd);
+												  lcd,
+												  pushButton);
 
 	wifi_aggregator.Init();
 
@@ -47,5 +51,6 @@ void loop()
 	{
 		wifi_aggregator.Service();
 		lcd.Service();
+		pushButton.Service();
 	}
 }

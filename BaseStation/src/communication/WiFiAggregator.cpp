@@ -11,7 +11,8 @@ WiFiAggregator::WiFiAggregator(ESP8266WiFiClass& _WiFi,
 							   mqtt_topic::ITopicData<double>* topic_data,
 							   controller::WorkFlowController<double>* work_flow_controller,
 							   data::DataWrapper& data_storage,
-							   lcd::Lcd& lcd)
+							   lcd::Lcd& lcd,
+							   device::PushButton& pushButton)
 	: _WiFi(_WiFi)
 	, config_manager(config_manager)
 	, server{80}
@@ -22,6 +23,7 @@ WiFiAggregator::WiFiAggregator(ESP8266WiFiClass& _WiFi,
 	, data_storage{data_storage}
 	, work_flow_controller{work_flow_controller}
 	, lcd{lcd}
+	, pushButton{pushButton}
 {
 	WiFi.mode(WIFI_STA);
 	WiFi.disconnect();
@@ -135,6 +137,7 @@ void WiFiAggregator::WaitForConfigData()
 
 	while(!get_out_from_config)
 	{
+		pushButton.Service();
 		server.handleClient();
 	}
 

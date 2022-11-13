@@ -7,6 +7,7 @@
 #include "configuration/ConfigurationManager.h"
 #include "definitions.h"
 #include "device/Lcd.h"
+#include "device/PushButton.h"
 #include <ArduinoJson.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266WiFi.h>
@@ -28,6 +29,7 @@ private:
 	data::DataWrapper& data_storage;
 	controller::WorkFlowController<double>* work_flow_controller;
 	lcd::Lcd& lcd;
+	device::PushButton& pushButton;
 
 	void WaitForConfigData();
 	void SetServerEndpoints();
@@ -38,7 +40,8 @@ public:
 				   mqtt_topic::ITopicData<double>* topic_data,
 				   controller::WorkFlowController<double>* work_flow_controller,
 				   data::DataWrapper& data_storage,
-				   lcd::Lcd& lcd);
+				   lcd::Lcd& lcd,
+				   device::PushButton& pushButton);
 
 	void Init();
 
