@@ -7,7 +7,7 @@ namespace definitions
 
 constexpr uint8_t max_report_stations{5};
 constexpr uint8_t max_report_station_name_length{20};
-constexpr double default_hysteresis{0.3};
+constexpr double default_hysteresis{0.2};
 constexpr double default_setpoint{15.0};
 constexpr double default_humidity{0.0};
 
@@ -18,6 +18,8 @@ constexpr const char* broker_address{"f2c11b1d3819403e93d49f7036dddfdf.s1.eu.hiv
 constexpr const int broker_port{8883};
 constexpr const char* topic_name{"centralHeating/roomTemperature"};
 constexpr const char* topic_ip_broadcast{"centralHeating/baseStationIp"};
+
+constexpr uint8_t mqtt_broadcast_waiting_time{20};
 
 enum ERROR_TYPE
 {

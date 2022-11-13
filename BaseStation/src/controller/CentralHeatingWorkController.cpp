@@ -31,12 +31,14 @@ CentralHeatingWorkController::CentralHeatingWorkController(
 	double default_setpoint,
 	data::DataWrapper& data_storage,
 	lcd::Lcd& lcd,
-	device::Relay& relay)
+	device::Relay& relay,
+	misc::AppState& appState)
 	: setpoint{default_setpoint}
 	, temperature_algorithm{temperature_algorithm}
 	, data_storage{data_storage}
 	, lcd{lcd}
 	, relay{relay}
+	, appState{appState}
 {
 	for(size_t i{}; i < constants::max_report_stations; i++)
 	{
@@ -144,10 +146,12 @@ void CentralHeatingWorkController::Service()
 		if(algorithm_result)
 		{
 			relay.On();
+			appState.SetState(misc::AppStates::HEATING);
 		}
 		else
 		{
 			relay.Off();
+			appState.SetState(misc::AppStates::COOLING);
 		}
 	}
 }

@@ -56,5 +56,6 @@ public:
 	void AddPrintableElement(PrintableElement element);
 	void UpdatePrintableElement(uint8_t uid, String name, double temp, double humidity);
 	void Service();
+	void EnablePrinting();
 };
 } // namespace lcd

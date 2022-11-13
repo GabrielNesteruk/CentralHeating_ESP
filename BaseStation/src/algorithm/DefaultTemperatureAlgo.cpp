@@ -2,8 +2,9 @@
 
 using namespace algorithm;
 
-DefaultTemperatureAlgo::DefaultTemperatureAlgo(double hysteresis)
+DefaultTemperatureAlgo::DefaultTemperatureAlgo(misc::AppState& appState, double hysteresis)
 	: hysteresis{hysteresis}
+	, appState{appState}
 { }
 
 bool DefaultTemperatureAlgo::CompareSetpointWithValues(double setpoint,
@@ -12,18 +13,35 @@ bool DefaultTemperatureAlgo::CompareSetpointWithValues(double setpoint,
 {
 	if(reported_values != nullptr)
 	{
-		double avg, sum = 0.0;
+		double avg, sum, calculation = 0.0;
 		for(size_t i{}; i < size; i++)
 		{
 			sum += reported_values[i];
 		}
 		avg = sum / static_cast<double>(size);
 
-		Serial.println("AVG:");
-		Serial.print(avg, 2);
-		Serial.println("");
+		if(appState.GetState() == misc::AppStates::INIT)
+		{
+			calculation = setpoint;
+		}
+		else if(appState.GetState() == misc::AppStates::HEATING)
+		{
+			calculation = setpoint - this->hysteresis;
+		}
+		else if(appState.GetState() == misc::AppStates::COOLING)
+		{
+			calculation = setpoint + this->hysteresis;
+		}
 
-		if(avg > setpoint - this->hysteresis)
+		// 23.5 - set
+
+		// 23.7 - heating
+		// if 23.7 >= 23.5 + 0.2 -> start cooling
+
+		// 23.3 - cooling
+		// if 23.3 <= 23.5 - 0.2 -> start heating
+
+		if(avg > calculation)
 		{
 			return false; // stop heating
 		}

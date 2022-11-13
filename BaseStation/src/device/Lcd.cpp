@@ -26,6 +26,13 @@ uint16_t Lcd::SetCursorToCenter(const char* str, int16_t y)
 	return h;
 }
 
+void Lcd::EnablePrinting()
+{
+	this->is_printing_disabled = false;
+	this->text_size = 1;
+	this->text_color = ST7735_WHITE;
+}
+
 void Lcd::PrintHeader()
 {
 	this->tft.fillScreen(ST7735_BLACK);

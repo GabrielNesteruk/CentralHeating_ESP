@@ -5,6 +5,7 @@
 #include "device/AHT20.h"
 #include "device/Lcd.h"
 #include "device/Relay.h"
+#include "misc/AppState.h"
 #include "misc/DataWrapper.h"
 #include <IAlgorithm.h>
 
@@ -20,6 +21,7 @@ private:
 	uint8_t last_saved_uid;
 	lcd::Lcd& lcd;
 	device::Relay& relay;
+	misc::AppState& appState;
 
 	device::ReportStation<double>* getReportStationByUID(uint8_t uid);
 
@@ -32,7 +34,8 @@ public:
 								 double default_setpoint,
 								 data::DataWrapper& data_storage,
 								 lcd::Lcd& lcd,
-								 device::Relay& relay);
+								 device::Relay& relay,
+								 misc::AppState& appState);
 	virtual void UpdateReportStation(mqtt_topic::ITopicData<double>* topic_data) override;
 	virtual void UpdateInternalValues() override;
 };

@@ -62,7 +62,9 @@ void WiFiAggregator::Init()
 			{
 				lcd.PrintError(definitions::ERROR_TYPE::WIFI_CONNECTION_ERROR);
 				while(true)
-					;
+				{
+					wdt_reset();
+				}
 			}
 			Serial.println(".");
 			delay(500);
@@ -71,15 +73,19 @@ void WiFiAggregator::Init()
 		Serial.println("WiFi connected.");
 		Serial.println("IP Address:");
 		Serial.println(_WiFi.localIP());
+		_WiFi.setAutoReconnect(true);
 		if(_WiFi.localIP().toString() != String{reinterpret_cast<const char*>(config.ip)})
 		{
 			_WiFi.localIP().toString().toCharArray(reinterpret_cast<char*>(&config.ip),
 												   sizeof(config.ip));
 			config_manager.Update(config);
 		}
+		ESP.wdtFeed();
 
-		delay(20 * 1000); // wait for 20 seconds before publishing your ip
 		lcd.Print("MQTT Init...");
+		delay(definitions::mqtt_broadcast_waiting_time *
+			  1000); // wait for 20 seconds before publishing your ip
+		ESP.wdtFeed();
 		if(mqtt.PreInit(_WiFi))
 		{
 			Serial.println("Connected to MQTT broker.");
@@ -184,6 +190,26 @@ void WiFiAggregator::SetServerEndpoints()
 
 void WiFiAggregator::Service()
 {
+	if(!_WiFi.isConnected())
+	{
+		_WiFi.reconnect();
+		lcd.PrintError(definitions::ERROR_TYPE::WIFI_CONNECTION_ERROR);
+
+		while(WiFi.status() != WL_CONNECTED)
+		{
+			delay(500);
+		}
+		lcd.EnablePrinting();
+	}
+
+	if(!mqtt.IsConnected())
+	{
+		lcd.PrintError(definitions::ERROR_TYPE::MQTT_CONNECTION_ERROR);
+		if(mqtt.RawConnect())
+		{
+			lcd.EnablePrinting();
+		}
+	}
 	server.handleClient();
 	mqtt.Service();
 }

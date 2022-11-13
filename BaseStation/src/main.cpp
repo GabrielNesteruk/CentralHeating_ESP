@@ -8,6 +8,7 @@
 #include "device/Lcd.h"
 #include "device/PushButton.h"
 #include "device/Relay.h"
+#include "misc/AppState.h"
 #include "misc/DataWrapper.h"
 #include <Arduino.h>
 
@@ -19,12 +20,14 @@ void setup()
 
 void loop()
 {
+	misc::AppState appState;
+
 	lcd::Lcd lcd;
 	device::Relay relay;
 	data::DataWrapper data_storage;
 	device::AHT20 temperature_sensors[constants::max_report_stations];
 	algorithm::DefaultTemperatureAlgo default_temp_measure_algorithm(
-		definitions::default_hysteresis);
+		appState, definitions::default_hysteresis);
 
 	configuration::ConfigurationManager config_manager;
 
@@ -35,7 +38,8 @@ void loop()
 		definitions::default_setpoint,
 		data_storage,
 		lcd,
-		relay};
+		relay,
+		appState};
 	mqtt_topic::DefaultTopicDataParser default_topic_data_parser;
 	communication::WiFiAggregator wifi_aggregator(WiFi,
 												  config_manager,

@@ -33,6 +33,14 @@ public:
 	bool PreInit(ESP8266WiFiClass& _WiFi);
 	void Init();
 	void Service();
+	bool RawConnect();
+	bool IsConnected()
+	{
+		if(mqtt_client != nullptr)
+			return mqtt_client->connected();
+		else
+			return false;
+	}
 };
 
 } // namespace communication
