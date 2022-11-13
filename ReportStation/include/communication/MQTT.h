@@ -26,6 +26,18 @@ public:
 	bool PreInit(ESP8266WiFiClass& _WiFi);
 	void Service();
 	void SendData(uint8_t* buffer, size_t length);
+	bool RawConnect();
+	bool IsConnected()
+	{
+		if(mqtt_client != nullptr)
+			return mqtt_client->connected();
+		else
+			return false;
+	}
+	void broke()
+	{
+		mqtt_client->disconnect();
+	}
 };
 
 } // namespace communication

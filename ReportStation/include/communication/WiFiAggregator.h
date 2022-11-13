@@ -5,6 +5,7 @@
 #include "configuration/ConfigurationData.h"
 #include "configuration/ConfigurationManager.h"
 #include "definitions.h"
+#include "device/PushButton.h"
 #include <ArduinoJson.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266WiFi.h>
@@ -24,13 +25,15 @@ private:
 	const IPAddress basic_mask; // basic mask assigned for AP
 	MQTT mqtt;
 	data::DataWrapper& data_storage;
+	device::PushButton& pushButton;
 
 	void WaitForConfigData();
 
 public:
 	WiFiAggregator(ESP8266WiFiClass& _WiFi,
 				   configuration::ConfigurationManager& config_manager,
-				   data::DataWrapper& data_storage);
+				   data::DataWrapper& data_storage,
+				   device::PushButton& pushButton);
 
 	void Init();
 

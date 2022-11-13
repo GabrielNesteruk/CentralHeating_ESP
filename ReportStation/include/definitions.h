@@ -12,4 +12,5 @@ constexpr const char* broker_address{"f2c11b1d3819403e93d49f7036dddfdf.s1.eu.hiv
 constexpr const int broker_port{8883};
 constexpr const char* topic_name{"centralHeating/roomTemperature"};
 constexpr const char* topic_ip_broadcast{"centralHeating/baseStationIp"};
+constexpr uint8_t mqtt_broadcast_waiting_time{20};
 } // namespace definitions

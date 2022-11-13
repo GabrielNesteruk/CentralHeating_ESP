@@ -32,14 +32,26 @@ bool MQTT::PreInit(ESP8266WiFiClass& _WiFi)
 		Serial.println("Publishing: ");
 		Serial.print(this->raw_buffer);
 		Serial.println();
-		mqtt_client->publish(definitions::topic_ip_broadcast, this->raw_buffer),
-			strlen(this->raw_buffer);
+		mqtt_client->publish(definitions::topic_ip_broadcast, this->raw_buffer);
 		return true;
 	}
 	else
 	{
 		return false;
 	}
+}
+
+bool MQTT::RawConnect()
+{
+	bool isConnected = (mqtt_client->connect(
+		mac_address, definitions::broker_username, definitions::broker_password));
+
+	if(isConnected)
+	{
+		return true;
+	}
+
+	return false;
 }
 
 void MQTT::SendData(uint8_t* buffer, size_t length)
