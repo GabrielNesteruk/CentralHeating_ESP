@@ -180,7 +180,6 @@ void WiFiAggregator::SetServerEndpoints()
 		doc["peroid"] = read_config.report_peroid;
 		serializeJson(doc, json);
 		this->server.send(200, "application/json", json);
-		this->mqtt.broke();
 	});
 
 	server.on("/settings", HTTP_POST, [this]() {
@@ -193,6 +192,21 @@ void WiFiAggregator::SetServerEndpoints()
 			memcpy(read_config.name, doc["name"] | "", definitions::max_report_station_name_length);
 			read_config.report_peroid = doc["peroid"] | read_config.report_peroid;
 			this->config_manager.Update(read_config);
+			this->server.send(200, "text/plain");
+		}
+		else
+		{
+			this->server.send(400, "text/plain");
+		}
+	});
+
+	server.on("/setAskSensorApi", HTTP_POST, [this]() {
+		String json = this->server.arg("plain");
+		DynamicJsonDocument doc(256);
+		DeserializationError error = deserializeJson(doc, json);
+		if(!error)
+		{
+			this->data_storage.getAskSensorApi() = doc["api"] | "";
 			this->server.send(200, "text/plain");
 		}
 		else

@@ -30,7 +30,7 @@ void loop()
 	data_generator::DefaultDataGenerator default_data_generator{config_manager, data_storage};
 	communication::WiFiAggregator wifi_aggregator(WiFi, config_manager, data_storage, pushButton);
 	controller::WorkFlowController controller{
-		config_manager, wifi_aggregator, &default_data_generator};
+		config_manager, wifi_aggregator, &default_data_generator, data_storage};
 
 	wifi_aggregator.Init();
 

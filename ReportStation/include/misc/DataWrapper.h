@@ -9,6 +9,7 @@ class DataWrapper
 private:
 	double current_temperature;
 	double humidity;
+	String ask_sensor_api;
 
 public:
 	DataWrapper()
@@ -24,6 +25,11 @@ public:
 	double& getHumidity()
 	{
 		return this->humidity;
+	}
+
+	String& getAskSensorApi()
+	{
+		return this->ask_sensor_api;
 	}
 };
 

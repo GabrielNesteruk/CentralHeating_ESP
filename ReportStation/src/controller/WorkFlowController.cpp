@@ -1,15 +1,50 @@
 #include "controller/WorkFlowController.h"
+#include "Arduino.h"
+#include <WiFiClientSecure.h>
 
 using namespace controller;
 
 WorkFlowController::WorkFlowController(configuration::ConfigurationManager& config_manager,
 									   communication::WiFiAggregator& wifi_aggregator,
-									   data_generator::IDataGenerator* data_generator)
+									   data_generator::IDataGenerator* data_generator,
+									   data::DataWrapper& data_storage)
 	: config_manager(config_manager)
 	, wifi_aggregator(wifi_aggregator)
 	, data_generator(data_generator)
+	, data_storage(data_storage)
 	, last_latched_time(0)
 { }
+
+void WorkFlowController::SendTemperatureToCloud()
+{
+	ESP.wdtFeed();
+	this->wifi_aggregator.StopSendingData();
+	if(!data_storage.getAskSensorApi().isEmpty())
+	{
+		WiFiClientSecure client;
+		String url;
+		url += "/write/";
+		url += data_storage.getAskSensorApi();
+		url += "?module1=";
+		url += data_storage.getCurrentTemperature();
+
+		client.setInsecure();
+		if(client.connect(definitions::ask_sensors_host, 443))
+		{
+			Serial.println("Client connected to: " + url);
+			client.print(String("GET ") + url + " HTTP/1.1\r\n" + "Host: " +
+						 definitions::ask_sensors_host + "\r\n" + "Connection: close\r\n\r\n");
+			client.stop();
+		}
+		else
+		{
+			Serial.println("Client could not connect to: " + url);
+		}
+	}
+	ESP.wdtFeed();
+	this->wifi_aggregator.StartSendingData();
+	ESP.wdtFeed();
+}
 
 void WorkFlowController::Service()
 {
@@ -22,6 +57,7 @@ void WorkFlowController::Service()
 		uint16_t data_length =
 			this->data_generator->GenerateData(this->data_buffer, sizeof(this->data_buffer));
 		this->wifi_aggregator.SendData(this->data_buffer, data_length);
+		this->SendTemperatureToCloud();
 
 		// indicate that data were sent
 		digitalWrite(LED_BUILTIN, LOW);

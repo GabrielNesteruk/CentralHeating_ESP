@@ -34,7 +34,7 @@ public:
 		else
 			return false;
 	}
-	void broke()
+	void Disconnect()
 	{
 		mqtt_client->disconnect();
 	}

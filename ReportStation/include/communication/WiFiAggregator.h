@@ -42,6 +42,16 @@ public:
 	void SendData(uint8_t* buffer, size_t length);
 
 	void SetServerEndpoints();
+
+	void StopSendingData()
+	{
+		mqtt.Disconnect();
+	}
+
+	void StartSendingData()
+	{
+		mqtt.RawConnect();
+	}
 };
 
 } // namespace communication
