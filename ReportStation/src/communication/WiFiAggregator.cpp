@@ -180,7 +180,6 @@ void WiFiAggregator::SetServerEndpoints()
 		doc["peroid"] = read_config.report_peroid;
 		serializeJson(doc, json);
 		this->server.send(200, "application/json", json);
-		this->mqtt.broke();
 	});
 
 	server.on("/settings", HTTP_POST, [this]() {

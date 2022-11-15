@@ -34,10 +34,6 @@ public:
 		else
 			return false;
 	}
-	void broke()
-	{
-		mqtt_client->disconnect();
-	}
 };
 
 } // namespace communication
