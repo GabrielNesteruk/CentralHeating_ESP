@@ -2,8 +2,6 @@
 
 #include <Arduino.h>
 #include <Constants.h>
-#include <ESP8266WiFi.h>
-
 namespace device
 {
 

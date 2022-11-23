@@ -2,7 +2,7 @@
 
 using namespace device;
 
-static constexpr uint8_t pin_number = D1;
+static constexpr uint8_t pin_number = 0;
 static volatile bool _isPressed = false;
 
 void IRAM_ATTR btnPressFnc()
@@ -31,10 +31,12 @@ void PushButton::Service()
 		if((millis() - locked_time >= 3000) && _isPressed)
 		{
 			config_manager.Clear();
-			ESP.reset();
+			ESP.restart();
 		}
 		else if(!_isPressed)
+		{
 			lock = false;
+		}
 	}
 	else
 	{

@@ -1,10 +1,10 @@
 #pragma once
 
 #include "definitions.h"
-#include <ESP8266WiFi.h>
 #include <ITopicData.h>
 #include <PubSubClient.h>
-#include <WiFiClient.h>
+#include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <WorkFlowController.h>
 #include <assert.h>
 #include <string.h>
@@ -30,7 +30,7 @@ public:
 		 mqtt_topic::ITopicData<double>* topic_data,
 		 controller::WorkFlowController<double>* work_flow_controller);
 
-	bool PreInit(ESP8266WiFiClass& _WiFi);
+	bool PreInit(WiFiClass& _WiFi);
 	void Init();
 	void Service();
 	bool RawConnect();
@@ -40,6 +40,10 @@ public:
 			return mqtt_client->connected();
 		else
 			return false;
+	}
+	void Disconnect()
+	{
+		mqtt_client->disconnect();
 	}
 };
 

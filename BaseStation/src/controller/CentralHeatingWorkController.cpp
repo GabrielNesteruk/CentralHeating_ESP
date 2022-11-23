@@ -39,6 +39,7 @@ CentralHeatingWorkController::CentralHeatingWorkController(
 	, lcd{lcd}
 	, relay{relay}
 	, appState{appState}
+	, cloud_provider{nullptr}
 {
 	for(size_t i{}; i < constants::max_report_stations; i++)
 	{
@@ -57,6 +58,16 @@ device::ReportStation<double>* CentralHeatingWorkController::getReportStationByU
 	}
 
 	return nullptr;
+}
+
+void CentralHeatingWorkController::SendTemperatureToCloud(bool state)
+{
+	if(this->cloud_provider == nullptr)
+	{
+		return;
+	}
+
+	this->cloud_provider->SetValueToSend(state);
 }
 
 void CentralHeatingWorkController::UpdateReportStation(mqtt_topic::ITopicData<double>* topic_data)
@@ -147,11 +158,13 @@ void CentralHeatingWorkController::Service()
 		{
 			relay.On();
 			appState.SetState(misc::AppStates::HEATING);
+			SendTemperatureToCloud(true);
 		}
 		else
 		{
 			relay.Off();
 			appState.SetState(misc::AppStates::COOLING);
+			SendTemperatureToCloud(false);
 		}
 	}
 }

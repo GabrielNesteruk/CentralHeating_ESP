@@ -3,7 +3,7 @@
 using namespace lcd;
 
 Lcd::Lcd()
-	: tft(Lcd::tft_cs, Lcd::tft_dc, Lcd::tft_rst)
+	: tft(Lcd::tft_cs, Lcd::tft_dc, Lcd::tft_mosi, Lcd::tft_sclk, Lcd::tft_rst)
 	, current_printable_elements(0)
 	, next_element_to_print(0)
 	, text_size(1)
@@ -133,8 +133,8 @@ void Lcd::Service()
 			this->Println(3, nameBuff, temperatureBuff, humidityBuff);
 			this->next_element_to_print =
 				(this->next_element_to_print + 1) % this->current_printable_elements;
-			Serial.println(this->current_printable_elements);
-			Serial.println(this->next_element_to_print);
+			// Serial.println(this->current_printable_elements);
+			// Serial.println(this->next_element_to_print);
 		}
 		else
 		{

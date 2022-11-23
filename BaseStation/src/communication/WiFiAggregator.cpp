@@ -6,7 +6,7 @@
 using namespace communication;
 using namespace configuration;
 
-WiFiAggregator::WiFiAggregator(ESP8266WiFiClass& _WiFi,
+WiFiAggregator::WiFiAggregator(WiFiClass& _WiFi,
 							   configuration::ConfigurationManager& config_manager,
 							   mqtt_topic::ITopicData<double>* topic_data,
 							   controller::WorkFlowController<double>* work_flow_controller,
@@ -29,6 +29,31 @@ WiFiAggregator::WiFiAggregator(ESP8266WiFiClass& _WiFi,
 	WiFi.disconnect();
 }
 
+void WiFiAggregator::ExtractIpOctetsFromString(const char* str, uint8_t* array)
+{
+	char tmp_buff[4];
+	for(size_t i{}, k{}, l{}; i < strlen(str); i++)
+	{
+		char character = str[i];
+		if(i == strlen(str) - 1)
+		{
+			tmp_buff[l++] = character;
+			tmp_buff[l] = '\0';
+			array[k] = static_cast<uint8_t>(atoi(tmp_buff));
+		}
+		else if(character != '.')
+		{
+			tmp_buff[l++] = character;
+		}
+		else
+		{
+			tmp_buff[l] = '\0';
+			array[k++] = static_cast<uint8_t>(atoi(tmp_buff));
+			l = 0;
+		}
+	}
+}
+
 void WiFiAggregator::Init()
 {
 	bool is_config_in_memory = config_manager.Load();
@@ -38,6 +63,7 @@ void WiFiAggregator::Init()
 		Serial.println("Config is no in memory");
 		// there is no config in memory so were setting wifi as an AP and waiting
 		// for a config data
+		pinMode(definitions::LED_BUILTIN, OUTPUT);
 		_WiFi.softAPConfig(basic_ip_address, basic_gateway_address, basic_mask);
 		_WiFi.softAP(definitions::basic_station_name);
 		WaitForConfigData();
@@ -49,8 +75,26 @@ void WiFiAggregator::Init()
 		auto config = config_manager.Get();
 		if(static_cast<char>(config.ip[0]) != '\0')
 		{
-			_WiFi.config(IPAddress{config.ip}, IPAddress{config.gateway}, IPAddress{config.mask});
+			IPAddress ipAdresses[3];
+			uint8_t octets[4];
+
+			ExtractIpOctetsFromString((char*)config.ip, octets);
+			ipAdresses[0] = IPAddress{octets[0], octets[1], octets[2], octets[3]};
+			ExtractIpOctetsFromString((char*)config.gateway, octets);
+			ipAdresses[1] = IPAddress{octets[0], octets[1], octets[2], octets[3]};
+			ExtractIpOctetsFromString((char*)config.mask, octets);
+			ipAdresses[2] = IPAddress{octets[0], octets[1], octets[2], octets[3]};
+			Serial.println(ipAdresses[0]);
+			Serial.println(ipAdresses[1]);
+			Serial.println(ipAdresses[2]);
+
+			_WiFi.config(ipAdresses[0],
+						 ipAdresses[1],
+						 ipAdresses[2],
+						 IPAddress{8, 8, 8, 8},
+						 IPAddress{8, 8, 4, 4});
 		}
+
 		_WiFi.begin(reinterpret_cast<const char*>(config.ssid),
 					reinterpret_cast<const char*>(config.password));
 
@@ -63,7 +107,7 @@ void WiFiAggregator::Init()
 				lcd.PrintError(definitions::ERROR_TYPE::WIFI_CONNECTION_ERROR);
 				while(true)
 				{
-					ESP.wdtFeed();
+					delay(1);
 					pushButton.Service();
 				}
 			}
@@ -77,16 +121,14 @@ void WiFiAggregator::Init()
 		_WiFi.setAutoReconnect(true);
 		if(_WiFi.localIP().toString() != String{reinterpret_cast<const char*>(config.ip)})
 		{
-			_WiFi.localIP().toString().toCharArray(reinterpret_cast<char*>(&config.ip),
-												   sizeof(config.ip));
+			String localIp = _WiFi.localIP().toString();
+			localIp.toCharArray(reinterpret_cast<char*>(config.ip), sizeof(config.ip));
 			config_manager.Update(config);
 		}
-		ESP.wdtFeed();
 
 		lcd.Print("MQTT Init...");
 		delay(definitions::mqtt_broadcast_waiting_time *
 			  1000); // wait for 20 seconds before publishing your ip
-		ESP.wdtFeed();
 		if(mqtt.PreInit(_WiFi))
 		{
 			Serial.println("Connected to MQTT broker.");
@@ -115,9 +157,13 @@ void WiFiAggregator::WaitForConfigData()
 		{
 			auto read_config = config_manager.Get();
 			memcpy(read_config.ssid, doc["ssid"] | "", 32);
+			read_config.ssid[sizeof(read_config.ssid) - 1] = '\0';
 			memcpy(read_config.password, doc["password"] | "", 64);
+			read_config.ssid[sizeof(read_config.password) - 1] = '\0';
 			memcpy(read_config.mask, doc["mask"] | "", 16);
+			read_config.ssid[sizeof(read_config.mask) - 1] = '\0';
 			memcpy(read_config.gateway, doc["gateway"] | "", 16);
+			read_config.ssid[sizeof(read_config.gateway) - 1] = '\0';
 			read_config.ip[0] = '\0';
 
 			if(static_cast<char>(read_config.ssid[0]) == '\0' ||
@@ -144,6 +190,14 @@ void WiFiAggregator::WaitForConfigData()
 
 	while(!get_out_from_config)
 	{
+		if(_WiFi.softAPgetStationNum())
+		{
+			digitalWrite(definitions::LED_BUILTIN, HIGH);
+		}
+		else
+		{
+			digitalWrite(definitions::LED_BUILTIN, LOW);
+		}
 		server.handleClient();
 	}
 
@@ -186,6 +240,31 @@ void WiFiAggregator::SetServerEndpoints()
 			this->server.send(400, "text/plain");
 		}
 	});
+
+	server.on("/setAskSensorApi", HTTP_POST, [this]() {
+		String json = this->server.arg("plain");
+		DynamicJsonDocument doc(256);
+		DeserializationError error = deserializeJson(doc, json);
+		if(!error)
+		{
+			this->data_storage.getAskSensorApi() = doc["api"] | "";
+			if(this->data_storage.getAskSensorApi() != "")
+			{
+				auto config = this->config_manager.Get();
+				memcpy(config.api_key, doc["api"] | "", definitions::ask_sensors_api_key_length);
+				config.api_key[sizeof(config.api_key) - 1] = '\0';
+				Serial.println("API SAVED: ");
+				Serial.print((char*)config.api_key);
+				Serial.println();
+				this->config_manager.Update(config);
+			}
+			this->server.send(200, "text/plain");
+		}
+		else
+		{
+			this->server.send(400, "text/plain");
+		}
+	});
 }
 
 void WiFiAggregator::Service()
@@ -201,6 +280,11 @@ void WiFiAggregator::Service()
 		}
 		lcd.EnablePrinting();
 	}
+	else
+	{
+		server.handleClient();
+		delay(10);
+	}
 
 	if(!mqtt.IsConnected())
 	{
@@ -210,6 +294,8 @@ void WiFiAggregator::Service()
 			lcd.EnablePrinting();
 		}
 	}
-	server.handleClient();
-	mqtt.Service();
+	else
+	{
+		mqtt.Service();
+	}
 }

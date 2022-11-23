@@ -3,6 +3,7 @@
 #include "ConfigurationData.h"
 #include "IConfiguration.h"
 #include "IPAddress.h"
+#include "misc/MemoryMap.h"
 #include <stdint.h>
 
 namespace configuration
@@ -18,9 +19,10 @@ private:
 	};
 
 	ConfigurationData config_data;
-	const uint32_t config_base_address{0};
+	const uint32_t config_base_address{memory::configuration_data_base_address};
 
 public:
+	ConfigurationManager();
 	virtual bool Save() const override;
 	virtual bool Load() override;
 	virtual void Clear() const override;

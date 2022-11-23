@@ -31,9 +31,11 @@ public:
 	};
 
 private:
-	static constexpr uint8_t tft_rst = D4;
-	static constexpr uint8_t tft_cs = D3;
-	static constexpr uint8_t tft_dc = D2;
+	static constexpr uint8_t tft_rst = 4;
+	static constexpr uint8_t tft_cs = 5;
+	static constexpr uint8_t tft_dc = 15;
+	static constexpr uint8_t tft_mosi = 23;
+	static constexpr uint8_t tft_sclk = 18;
 
 	Adafruit_ST7735 tft;
 	PrintableElement printableElementsList[definitions::max_report_stations];

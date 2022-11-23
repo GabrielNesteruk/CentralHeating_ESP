@@ -24,13 +24,14 @@ MQTT::MQTT(String mac_address,
 	mac_address.toCharArray(this->mac_address, sizeof(this->mac_address));
 }
 
-bool MQTT::PreInit(ESP8266WiFiClass& _WiFi)
+bool MQTT::PreInit(WiFiClass& _WiFi)
 {
 	client.setInsecure();
 	mqtt_client = new PubSubClient(client);
 	mqtt_client->setServer(broker, port);
-	bool isConnected = (mqtt_client->connect(
-		mac_address, definitions::broker_username, definitions::broker_password));
+	Serial.println("Connecting to MQTT...");
+	bool isConnected = mqtt_client->connect(
+		mac_address, definitions::broker_username, definitions::broker_password);
 
 	if(isConnected)
 	{
@@ -45,6 +46,8 @@ bool MQTT::PreInit(ESP8266WiFiClass& _WiFi)
 	{
 		return false;
 	}
+
+	return true;
 }
 
 void MQTT::Init()

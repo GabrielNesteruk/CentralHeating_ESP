@@ -7,7 +7,7 @@ namespace device
 class Relay
 {
 private:
-	static constexpr uint8_t pin_number = D0;
+	static constexpr uint8_t pin_number = 22;
 
 public:
 	Relay()

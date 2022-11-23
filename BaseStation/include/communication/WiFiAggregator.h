@@ -9,9 +9,8 @@
 #include "device/Lcd.h"
 #include "device/PushButton.h"
 #include <ArduinoJson.h>
-#include <ESP8266WebServer.h>
-#include <ESP8266WiFi.h>
-#include <PubSubClient.h>
+#include <WebServer.h>
+#include <WiFi.h>
 #include <misc/DataWrapper.h>
 
 namespace communication
@@ -19,9 +18,9 @@ namespace communication
 class WiFiAggregator
 {
 private:
-	ESP8266WiFiClass& _WiFi;
+	WiFiClass& _WiFi;
 	configuration::ConfigurationManager& config_manager;
-	ESP8266WebServer server;
+	WebServer server;
 	const IPAddress basic_ip_address; // basic ip address assigned for AP
 	const IPAddress basic_gateway_address; // basic gateway address assigned for AP
 	const IPAddress basic_mask; // basic mask assigned for AP
@@ -33,9 +32,10 @@ private:
 
 	void WaitForConfigData();
 	void SetServerEndpoints();
+	void ExtractIpOctetsFromString(const char* str, uint8_t* array);
 
 public:
-	WiFiAggregator(ESP8266WiFiClass& _WiFi,
+	WiFiAggregator(WiFiClass& _WiFi,
 				   configuration::ConfigurationManager& config_manager,
 				   mqtt_topic::ITopicData<double>* topic_data,
 				   controller::WorkFlowController<double>* work_flow_controller,
@@ -46,6 +46,16 @@ public:
 	void Init();
 
 	void Service();
+
+	void StopSendingData()
+	{
+		mqtt.Disconnect();
+	}
+
+	void StartSendingData()
+	{
+		mqtt.RawConnect();
+	}
 };
 
 } // namespace communication

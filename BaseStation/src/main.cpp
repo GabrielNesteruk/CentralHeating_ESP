@@ -9,6 +9,7 @@
 #include "device/PushButton.h"
 #include "device/Relay.h"
 #include "misc/AppState.h"
+#include "misc/AskStationsCloud.h"
 #include "misc/DataWrapper.h"
 #include <Arduino.h>
 
@@ -20,16 +21,17 @@ void setup()
 
 void loop()
 {
+	configuration::ConfigurationManager config_manager;
+
 	misc::AppState appState;
 
 	lcd::Lcd lcd;
+
 	device::Relay relay;
-	data::DataWrapper data_storage;
+	data::DataWrapper data_storage{config_manager};
 	device::AHT20 temperature_sensors[constants::max_report_stations];
 	algorithm::DefaultTemperatureAlgo default_temp_measure_algorithm(
 		appState, definitions::default_hysteresis);
-
-	configuration::ConfigurationManager config_manager;
 
 	device::PushButton pushButton{config_manager};
 	controller::CentralHeatingWorkController central_heating_controller{
@@ -49,6 +51,10 @@ void loop()
 												  lcd,
 												  pushButton);
 
+	misc::AskStationsCloud askStationCloud(data_storage, wifi_aggregator);
+
+	central_heating_controller.SetCloudProvider(&askStationCloud);
+
 	wifi_aggregator.Init();
 
 	while(true)
@@ -56,5 +62,6 @@ void loop()
 		wifi_aggregator.Service();
 		lcd.Service();
 		pushButton.Service();
+		askStationCloud.Service();
 	}
 }
