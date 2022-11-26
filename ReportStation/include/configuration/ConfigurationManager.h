@@ -21,6 +21,7 @@ private:
 	const uint32_t config_base_address{0};
 
 public:
+	ConfigurationManager();
 	virtual bool Save() const override;
 	virtual bool Load() override;
 	virtual void Clear() const override;

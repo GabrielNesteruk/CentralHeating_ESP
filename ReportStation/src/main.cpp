@@ -24,8 +24,8 @@ void setup()
 
 void loop()
 {
-	data::DataWrapper data_storage;
 	configuration::ConfigurationManager config_manager;
+	data::DataWrapper data_storage{config_manager};
 	device::PushButton pushButton(config_manager);
 	data_generator::DefaultDataGenerator default_data_generator{config_manager, data_storage};
 	communication::WiFiAggregator wifi_aggregator(WiFi, config_manager, data_storage, pushButton);
@@ -39,5 +39,6 @@ void loop()
 		wifi_aggregator.Service();
 		controller.Service();
 		pushButton.Service();
+		delay(1);
 	}
 }

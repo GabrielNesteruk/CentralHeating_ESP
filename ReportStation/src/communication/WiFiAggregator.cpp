@@ -24,6 +24,31 @@ WiFiAggregator::WiFiAggregator(ESP8266WiFiClass& _WiFi,
 	WiFi.disconnect();
 }
 
+void WiFiAggregator::ExtractIpOctetsFromString(const char* str, uint8_t* array)
+{
+	char tmp_buff[4];
+	for(size_t i{}, k{}, l{}; i < strlen(str); i++)
+	{
+		char character = str[i];
+		if(i == strlen(str) - 1)
+		{
+			tmp_buff[l++] = character;
+			tmp_buff[l] = '\0';
+			array[k] = static_cast<uint8_t>(atoi(tmp_buff));
+		}
+		else if(character != '.')
+		{
+			tmp_buff[l++] = character;
+		}
+		else
+		{
+			tmp_buff[l] = '\0';
+			array[k++] = static_cast<uint8_t>(atoi(tmp_buff));
+			l = 0;
+		}
+	}
+}
+
 void WiFiAggregator::Init()
 {
 	bool is_config_in_memory = config_manager.Load();
@@ -45,12 +70,22 @@ void WiFiAggregator::Init()
 		auto config = config_manager.Get();
 		if(static_cast<char>(config.ip[0]) != '\0')
 		{
-			_WiFi.config(IPAddress{config.ip}, IPAddress{config.gateway}, IPAddress{config.mask});
+			IPAddress ipAdresses[3];
+			uint8_t octets[4];
+
+			ExtractIpOctetsFromString((char*)config.ip, octets);
+			ipAdresses[0] = IPAddress{octets[0], octets[1], octets[2], octets[3]};
+			ExtractIpOctetsFromString((char*)config.gateway, octets);
+			ipAdresses[1] = IPAddress{octets[0], octets[1], octets[2], octets[3]};
+			ExtractIpOctetsFromString((char*)config.mask, octets);
+			ipAdresses[2] = IPAddress{octets[0], octets[1], octets[2], octets[3]};
+
+			// there is a problem with DNS when trying to connect to the MQTT broker ;/
+			// _WiFi.config(ipAdresses[0], ipAdresses[1], ipAdresses[2]);
 		}
 		_WiFi.begin(reinterpret_cast<const char*>(config.ssid),
 					reinterpret_cast<const char*>(config.password));
 
-		ESP.wdtFeed();
 		while(WiFi.status() != WL_CONNECTED)
 		{
 			pushButton.Service();
@@ -64,15 +99,13 @@ void WiFiAggregator::Init()
 		_WiFi.setAutoReconnect(true);
 		if(_WiFi.localIP().toString() != String{reinterpret_cast<const char*>(config.ip)})
 		{
-			_WiFi.localIP().toString().toCharArray(reinterpret_cast<char*>(&config.ip),
+			_WiFi.localIP().toString().toCharArray(reinterpret_cast<char*>(config.ip),
 												   sizeof(config.ip));
 			config_manager.Update(config);
 		}
 
-		ESP.wdtFeed();
 		delay(definitions::mqtt_broadcast_waiting_time *
 			  1000); // wait for 20 seconds before publishing your ip
-		ESP.wdtFeed();
 		if(mqtt.PreInit(_WiFi))
 		{
 			Serial.println("Connected to MQTT broker.");
@@ -107,10 +140,15 @@ void WiFiAggregator::WaitForConfigData()
 		{
 			auto read_config = config_manager.Get();
 			memcpy(read_config.ssid, doc["ssid"] | "", 32);
+			read_config.ssid[sizeof(read_config.ssid) - 1] = '\0';
 			memcpy(read_config.password, doc["password"] | "", 64);
+			read_config.password[sizeof(read_config.password) - 1] = '\0';
 			memcpy(read_config.mask, doc["mask"] | "", 16);
+			read_config.mask[sizeof(read_config.mask) - 1] = '\0';
 			memcpy(read_config.gateway, doc["gateway"] | "", 16);
+			read_config.gateway[sizeof(read_config.gateway) - 1] = '\0';
 			memcpy(read_config.name, doc["name"] | "", definitions::max_report_station_name_length);
+			read_config.name[definitions::max_report_station_name_length] = '\0';
 			read_config.uid = doc["uid"] | 0xFF;
 			read_config.report_peroid = doc["peroid"] | 15;
 			read_config.ip[0] = '\0';
@@ -126,6 +164,7 @@ void WiFiAggregator::WaitForConfigData()
 			else
 			{
 				this->server.send(200, "text/plain");
+				memset(read_config.api_key, 0x00, sizeof(read_config.api_key));
 				this->config_manager.Update(read_config);
 				get_out_from_config = true;
 			}
@@ -207,6 +246,16 @@ void WiFiAggregator::SetServerEndpoints()
 		if(!error)
 		{
 			this->data_storage.getAskSensorApi() = doc["api"] | "";
+			if(this->data_storage.getAskSensorApi() != "")
+			{
+				auto config = this->config_manager.Get();
+				memcpy(config.api_key, doc["api"] | "", definitions::ask_sensors_api_key_length);
+				config.api_key[sizeof(config.api_key) - 1] = '\0';
+				Serial.println("API SAVED: ");
+				Serial.print((char*)config.api_key);
+				Serial.println();
+				this->config_manager.Update(config);
+			}
 			this->server.send(200, "text/plain");
 		}
 		else
@@ -223,7 +272,6 @@ void WiFiAggregator::Service()
 		_WiFi.reconnect();
 		while(WiFi.status() != WL_CONNECTED)
 		{
-			ESP.wdtFeed();
 			digitalWrite(LED_BUILTIN, LOW);
 			delay(500);
 			digitalWrite(LED_BUILTIN, HIGH);
@@ -232,19 +280,23 @@ void WiFiAggregator::Service()
 		}
 		Serial.println("WiFi reconnected!!!");
 	}
+	else
+	{
+		server.handleClient();
+	}
 
 	if(!mqtt.IsConnected())
 	{
 		Serial.println("Trying to reconnect to MQTT Broker...");
 		digitalWrite(LED_BUILTIN, LOW);
-		ESP.wdtFeed();
 		if(mqtt.RawConnect())
 		{
 			Serial.println("MQTT Broker reconnected!!!");
 			digitalWrite(LED_BUILTIN, HIGH);
 		}
 	}
-
-	server.handleClient();
-	mqtt.Service();
+	else
+	{
+		mqtt.Service();
+	}
 }

@@ -17,10 +17,9 @@ WorkFlowController::WorkFlowController(configuration::ConfigurationManager& conf
 
 void WorkFlowController::SendTemperatureToCloud()
 {
-	ESP.wdtFeed();
-	this->wifi_aggregator.StopSendingData();
 	if(!data_storage.getAskSensorApi().isEmpty())
 	{
+		this->wifi_aggregator.StopSendingData();
 		WiFiClientSecure client;
 		String url;
 		url += "/write/";
@@ -40,10 +39,8 @@ void WorkFlowController::SendTemperatureToCloud()
 		{
 			Serial.println("Client could not connect to: " + url);
 		}
+		this->wifi_aggregator.StartSendingData();
 	}
-	ESP.wdtFeed();
-	this->wifi_aggregator.StartSendingData();
-	ESP.wdtFeed();
 }
 
 void WorkFlowController::Service()

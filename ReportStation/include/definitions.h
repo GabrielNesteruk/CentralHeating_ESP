@@ -15,4 +15,5 @@ constexpr const char* topic_ip_broadcast{"centralHeating/baseStationIp"};
 constexpr uint8_t mqtt_broadcast_waiting_time{20};
 
 constexpr const char* ask_sensors_host{"api.asksensors.com"};
+constexpr uint8_t ask_sensors_api_key_length{32};
 } // namespace definitions

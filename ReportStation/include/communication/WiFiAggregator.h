@@ -28,6 +28,7 @@ private:
 	device::PushButton& pushButton;
 
 	void WaitForConfigData();
+	void ExtractIpOctetsFromString(const char* str, uint8_t* array);
 
 public:
 	WiFiAggregator(ESP8266WiFiClass& _WiFi,

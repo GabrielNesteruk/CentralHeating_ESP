@@ -5,6 +5,11 @@
 
 using namespace configuration;
 
+ConfigurationManager::ConfigurationManager()
+{
+	memset(&(this->config_data), 0x00, sizeof(this->config_data));
+}
+
 bool ConfigurationManager::Save() const
 {
 	bool result;
