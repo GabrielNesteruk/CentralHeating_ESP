@@ -64,6 +64,7 @@ void WiFiAggregator::Init()
 		// there is no config in memory so were setting wifi as an AP and waiting
 		// for a config data
 		pinMode(definitions::LED_BUILTIN, OUTPUT);
+		digitalWrite(definitions::LED_BUILTIN, LOW);
 		_WiFi.softAPConfig(basic_ip_address, basic_gateway_address, basic_mask);
 		_WiFi.softAP(definitions::basic_station_name);
 		WaitForConfigData();
