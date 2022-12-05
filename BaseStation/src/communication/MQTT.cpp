@@ -68,8 +68,10 @@ void MQTT::Init()
 		Serial.println("");
 		if(strcmp(this->topic, topic) == 0)
 		{
+			Serial.println("MQTT topic is okay...");
 			if(this->topic_data->SetPayload(payload, length))
 			{
+				Serial.println("Updating report station info.");
 				this->work_flow_controller->UpdateReportStation(this->topic_data);
 			}
 		}

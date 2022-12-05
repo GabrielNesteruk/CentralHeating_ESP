@@ -17,7 +17,6 @@ class CentralHeatingWorkController : public WorkFlowController<double>
 {
 
 private:
-	double setpoint;
 	algorithm::IAlgorithm<double>* temperature_algorithm;
 	data::DataWrapper& data_storage;
 	uint8_t last_saved_uid;
@@ -36,13 +35,11 @@ protected:
 public:
 	CentralHeatingWorkController(device::ReportStation<double>* report_stations_array,
 								 algorithm::IAlgorithm<double>* temperature_algorithm,
-								 double default_setpoint,
 								 data::DataWrapper& data_storage,
 								 lcd::Lcd& lcd,
 								 device::Relay& relay,
 								 misc::AppState& appState);
 	virtual void UpdateReportStation(mqtt_topic::ITopicData<double>* topic_data) override;
-	virtual void UpdateInternalValues() override;
 	void SetCloudProvider(misc::ICloudProvider* cloud_provider)
 	{
 		this->cloud_provider = cloud_provider;

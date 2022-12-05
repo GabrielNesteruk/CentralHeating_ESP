@@ -22,7 +22,8 @@ private:
 	const uint8_t id_offset = 0;
 	const uint8_t name_offset = id_offset + sizeof(uint8_t);
 	const uint8_t report_peroid_offset =
-		name_offset + sizeof(uint8_t) * definitions::max_report_station_name_length;
+		name_offset + sizeof(uint8_t) * definitions::max_report_station_name_length +
+		1; // + 1 for '\0'
 	const uint8_t temperature_offset = report_peroid_offset + sizeof(uint8_t);
 	const uint8_t humidity_offset = temperature_offset + sizeof(double);
 	const uint8_t crc_offset = humidity_offset + sizeof(double);

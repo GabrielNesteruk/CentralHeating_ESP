@@ -22,7 +22,6 @@ void setup()
 void loop()
 {
 	configuration::ConfigurationManager config_manager;
-
 	misc::AppState appState;
 
 	lcd::Lcd lcd;
@@ -35,13 +34,7 @@ void loop()
 
 	device::PushButton pushButton{config_manager};
 	controller::CentralHeatingWorkController central_heating_controller{
-		temperature_sensors,
-		&default_temp_measure_algorithm,
-		definitions::default_setpoint,
-		data_storage,
-		lcd,
-		relay,
-		appState};
+		temperature_sensors, &default_temp_measure_algorithm, data_storage, lcd, relay, appState};
 	mqtt_topic::DefaultTopicDataParser default_topic_data_parser;
 	communication::WiFiAggregator wifi_aggregator(WiFi,
 												  config_manager,

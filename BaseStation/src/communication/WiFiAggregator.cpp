@@ -166,6 +166,7 @@ void WiFiAggregator::WaitForConfigData()
 			memcpy(read_config.gateway, doc["gateway"] | "", 16);
 			read_config.ssid[sizeof(read_config.gateway) - 1] = '\0';
 			read_config.ip[0] = '\0';
+			read_config.setpoint = definitions::default_setpoint;
 
 			if(static_cast<char>(read_config.ssid[0]) == '\0' ||
 			   static_cast<char>(read_config.password[0]) == '\0' ||
@@ -230,7 +231,9 @@ void WiFiAggregator::SetServerEndpoints()
 		if(!error)
 		{
 			this->data_storage.getSetTemperature() = doc["temperature"];
-			this->work_flow_controller->UpdateInternalValues();
+			auto read_config = config_manager.Get();
+			read_config.setpoint = this->data_storage.getSetTemperature();
+			config_manager.Update(read_config);
 			Serial.println("Set temperature request, value: ");
 			Serial.print(this->data_storage.getSetTemperature(), 2);
 			Serial.println();

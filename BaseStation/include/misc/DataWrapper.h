@@ -17,15 +17,13 @@ private:
 public:
 	DataWrapper(configuration::ConfigurationManager& config_manager)
 		: avg_temperature{0.0}
-		, set_temperature{definitions::default_setpoint}
 		, config_manager{config_manager}
 	{
 		delay(1000);
 		uint8_t tmp_buff[definitions::ask_sensors_api_key_length + 1];
-		memset(tmp_buff, 0x00, definitions::ask_sensors_api_key_length);
-		config_manager.Load();
+		memset(tmp_buff, 0xFF, definitions::ask_sensors_api_key_length);
 		auto config = config_manager.Get();
-		Serial.println((char*)config.api_key);
+		this->set_temperature = config.setpoint;
 		if(memcmp(config.api_key, tmp_buff, definitions::ask_sensors_api_key_length) != 0)
 		{
 			Serial.println("API key found in the config!");

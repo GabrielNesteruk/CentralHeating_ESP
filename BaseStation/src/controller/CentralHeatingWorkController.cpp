@@ -28,13 +28,11 @@ static void printReportStationInfo(device::ReportStation<double>* report_station
 CentralHeatingWorkController::CentralHeatingWorkController(
 	device::ReportStation<double>* report_stations_array,
 	algorithm::IAlgorithm<double>* temperature_algorithm,
-	double default_setpoint,
 	data::DataWrapper& data_storage,
 	lcd::Lcd& lcd,
 	device::Relay& relay,
 	misc::AppState& appState)
-	: setpoint{default_setpoint}
-	, temperature_algorithm{temperature_algorithm}
+	: temperature_algorithm{temperature_algorithm}
 	, data_storage{data_storage}
 	, lcd{lcd}
 	, relay{relay}
@@ -149,7 +147,7 @@ void CentralHeatingWorkController::Service()
 			avg += temperatures[i];
 		}
 		bool algorithm_result = this->temperature_algorithm->CompareSetpointWithValues(
-			this->setpoint, temperatures, this->active_report_stations);
+			this->data_storage.getSetTemperature(), temperatures, this->active_report_stations);
 
 		this->data_storage.getAvgTemperature() =
 			avg / static_cast<double>(this->active_report_stations);
@@ -167,9 +165,4 @@ void CentralHeatingWorkController::Service()
 			SendTemperatureToCloud(false);
 		}
 	}
-}
-
-void CentralHeatingWorkController::UpdateInternalValues()
-{
-	this->setpoint = data_storage.getSetTemperature();
 }
