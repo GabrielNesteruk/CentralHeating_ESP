@@ -22,46 +22,58 @@ bool DefaultTemperatureAlgo::CompareSetpointWithValues(double setpoint,
 
 		if(appState.GetState() == misc::AppStates::INIT)
 		{
-			calculation = setpoint;
+			// check in what state is app
+			if(avg >= setpoint - hysteresis)
+				appState.SetState(misc::AppStates::STANDBY);
+			else
+				appState.SetState(misc::AppStates::HEATING);
 		}
-		else if(appState.GetState() == misc::AppStates::HEATING)
+
+		if(appState.GetState() == misc::AppStates::HEATING)
+		{
+			calculation = setpoint;
+			if(avg >= calculation)
+			{
+				// temperature exceeded setpoint so stop heating and go into standby
+				appState.SetState(misc::AppStates::STANDBY);
+				return false; // stop heating
+			}
+			else
+			{
+				// else just keep heating
+				return true; // start heating
+			}
+		}
+		else if(appState.GetState() == misc::AppStates::STANDBY)
 		{
 			calculation = setpoint - this->hysteresis;
+			if(avg < calculation)
+			{
+				// temperature is below setpoint so start heating
+				appState.SetState(misc::AppStates::HEATING);
+				return true;
+			}
+			else
+			{
+				// else do nothing, just wait
+				return false;
+			}
 		}
-		else if(appState.GetState() == misc::AppStates::COOLING)
-		{
-			calculation = setpoint + this->hysteresis;
-		}
 
-		Serial.println("Setpoint: ");
-		Serial.print(setpoint, DEC);
-		Serial.println();
+		// Serial.println("Setpoint: ");
+		// Serial.print(setpoint, DEC);
+		// Serial.println();
 
-		Serial.println("Avg: ");
-		Serial.print(avg, 2);
-		Serial.println();
+		// Serial.println("Avg: ");
+		// Serial.print(avg, 2);
+		// Serial.println();
 
-		// 23.5 - set
-
-		// 23.7 - heating
-		// if 23.7 >= 23.5 + 0.2 -> start cooling
-
-		// 23.3 - cooling
-		// if 23.3 <= 23.5 - 0.2 -> start heating
-
-		if(avg > calculation)
-		{
-			Serial.println("Stop heating");
-			return false; // stop heating
-		}
-		else
-		{
-			Serial.println("Keep heating");
-			return true; // keep heating
-		}
+		// just for safety reasons...
+		return false;
 	}
 	else
 	{
+		// array of temperatures is a nullptr
 		return false;
 	}
 }

@@ -54,97 +54,7 @@ void WiFiAggregator::ExtractIpOctetsFromString(const char* str, uint8_t* array)
 	}
 }
 
-void WiFiAggregator::Init()
-{
-	bool is_config_in_memory = config_manager.Load();
-	if(!is_config_in_memory)
-	{
-		lcd.Println(3, "Oczekiwanie", "na", "konfiguracje.");
-		Serial.println("Config is no in memory");
-		// there is no config in memory so were setting wifi as an AP and waiting
-		// for a config data
-		pinMode(definitions::LED_BUILTIN, OUTPUT);
-		digitalWrite(definitions::LED_BUILTIN, LOW);
-		_WiFi.softAPConfig(basic_ip_address, basic_gateway_address, basic_mask);
-		_WiFi.softAP(definitions::basic_station_name);
-		WaitForConfigData();
-	}
-	else
-	{
-		Serial.println("Trying to connect!");
-		// we have config in the memory so were going to connect to the network and set up listening mode
-		auto config = config_manager.Get();
-		if(static_cast<char>(config.ip[0]) != '\0')
-		{
-			IPAddress ipAdresses[3];
-			uint8_t octets[4];
-
-			ExtractIpOctetsFromString((char*)config.ip, octets);
-			ipAdresses[0] = IPAddress{octets[0], octets[1], octets[2], octets[3]};
-			ExtractIpOctetsFromString((char*)config.gateway, octets);
-			ipAdresses[1] = IPAddress{octets[0], octets[1], octets[2], octets[3]};
-			ExtractIpOctetsFromString((char*)config.mask, octets);
-			ipAdresses[2] = IPAddress{octets[0], octets[1], octets[2], octets[3]};
-			Serial.println(ipAdresses[0]);
-			Serial.println(ipAdresses[1]);
-			Serial.println(ipAdresses[2]);
-
-			_WiFi.config(ipAdresses[0],
-						 ipAdresses[1],
-						 ipAdresses[2],
-						 IPAddress{8, 8, 8, 8},
-						 IPAddress{8, 8, 4, 4});
-		}
-
-		_WiFi.begin(reinterpret_cast<const char*>(config.ssid),
-					reinterpret_cast<const char*>(config.password));
-
-		auto capturedTime = millis();
-		lcd.Print("WiFi Init...");
-		while(WiFi.status() != WL_CONNECTED)
-		{
-			if(millis() - capturedTime >= static_cast<unsigned long>(1000 * 60 * 1))
-			{
-				lcd.PrintError(definitions::ERROR_TYPE::WIFI_CONNECTION_ERROR);
-				while(true)
-				{
-					delay(1);
-					pushButton.Service();
-				}
-			}
-			Serial.println(".");
-			delay(500);
-		}
-
-		Serial.println("WiFi connected.");
-		Serial.println("IP Address:");
-		Serial.println(_WiFi.localIP());
-		_WiFi.setAutoReconnect(true);
-		if(_WiFi.localIP().toString() != String{reinterpret_cast<const char*>(config.ip)})
-		{
-			String localIp = _WiFi.localIP().toString();
-			localIp.toCharArray(reinterpret_cast<char*>(config.ip), sizeof(config.ip));
-			config_manager.Update(config);
-		}
-
-		lcd.Print("MQTT Init...");
-		delay(definitions::mqtt_broadcast_waiting_time *
-			  1000); // wait for 20 seconds before publishing your ip
-		if(mqtt.PreInit(_WiFi))
-		{
-			Serial.println("Connected to MQTT broker.");
-			mqtt.Init();
-			SetServerEndpoints();
-			server.begin();
-		}
-		else
-		{
-			// error !!!!
-			Serial.println("Could not connect to MQTT broker.");
-			lcd.PrintError(definitions::ERROR_TYPE::MQTT_CONNECTION_ERROR);
-		}
-	}
-}
+void WiFiAggregator::Init() { }
 
 void WiFiAggregator::WaitForConfigData()
 {
@@ -273,33 +183,36 @@ void WiFiAggregator::SetServerEndpoints()
 
 void WiFiAggregator::Service()
 {
-	if(!_WiFi.isConnected())
-	{
-		_WiFi.reconnect();
-		lcd.PrintError(definitions::ERROR_TYPE::WIFI_CONNECTION_ERROR);
+	server.handleClient();
+	delay(10);
 
-		while(WiFi.status() != WL_CONNECTED)
-		{
-			delay(500);
-		}
-		lcd.EnablePrinting();
-	}
-	else
-	{
-		server.handleClient();
-		delay(10);
-	}
+	// if(!_WiFi.isConnected())
+	// {
+	// 	_WiFi.reconnect();
+	// 	lcd.PrintError(definitions::ERROR_TYPE::WIFI_CONNECTION_ERROR);
 
-	if(!mqtt.IsConnected())
-	{
-		lcd.PrintError(definitions::ERROR_TYPE::MQTT_CONNECTION_ERROR);
-		if(mqtt.RawConnect())
-		{
-			lcd.EnablePrinting();
-		}
-	}
-	else
-	{
-		mqtt.Service();
-	}
+	// 	while(WiFi.status() != WL_CONNECTED)
+	// 	{
+	// 		delay(500);
+	// 	}
+	// 	lcd.EnablePrinting();
+	// }
+	// else
+	// {
+	// 	server.handleClient();
+	// 	delay(10);
+	// }
+
+	// if(!mqtt.IsConnected())
+	// {
+	// 	lcd.PrintError(definitions::ERROR_TYPE::MQTT_CONNECTION_ERROR);
+	// 	if(mqtt.RawConnect())
+	// 	{
+	// 		lcd.EnablePrinting();
+	// 	}
+	// }
+	// else
+	// {
+	// 	mqtt.Service();
+	// }
 }

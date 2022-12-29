@@ -7,7 +7,7 @@ enum class AppStates
 {
 	INIT,
 	HEATING,
-	COOLING
+	STANDBY
 };
 
 class AppState

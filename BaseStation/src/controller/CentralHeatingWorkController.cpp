@@ -161,7 +161,7 @@ void CentralHeatingWorkController::Service()
 		else
 		{
 			relay.Off();
-			appState.SetState(misc::AppStates::COOLING);
+			appState.SetState(misc::AppStates::STANDBY);
 			SendTemperatureToCloud(false);
 		}
 	}
